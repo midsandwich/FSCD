@@ -413,6 +413,7 @@ function iconize(root){
 new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(x=>iconize(x)); if(m.type==="characterData") iconize(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
 
 /* ---------- helpers ---------- */
+const APP_VERSION="Nov 10, 2026 · 9:50 PM"; // change this on every update, so the phone shows which version it has
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -622,7 +623,8 @@ function renderInner(){
         <textarea id="restoreBox" rows="3" placeholder="Paste backup code here" style="margin-top:12px;font-size:15px"></textarea>
         <button class="big ghost" data-act="restore" style="min-height:58px;font-size:20px;background:var(--bg)">♻️ Restore</button>
       </div>
-      <button class="big blue" data-go="home"><span class="em">✅</span>Done</button>`;
+      <button class="big blue" data-go="home"><span class="em">✅</span>Done</button>
+      <div class="hint" style="text-align:center;margin-top:14px">Version ${APP_VERSION}</div>`;
   }
 }
 function seg(key,val){ return `<div class="seg">${["Yes","No"].map(o=>`<button data-seg="${key}" data-v="${o}" class="${val===o?"on":""}">${o}</button>`).join("")}</div>`; }
@@ -807,8 +809,11 @@ function taShow(inp){ const ids=inp.id==="nName"?["nAddr","nKm"]:["cAddr","cKm"]
   const m=taMatches(inp.value); if(!m.length){ box.remove(); return; }
   if(inp.id==="nName") sheetShow(inp);
   box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}${f.sp?`<span class="tsp"><b>${esc(f.sp)}</b>${f.city?` ${esc(f.city)}`:""}</span>`:""}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("")+(taMatches.more?`<div class="tah" style="text-align:center">🔍 ${taMatches.more} more · type more of the name</div>`:"");
+  let tsY=null, tsX=0, tMoved=false;
+  box.addEventListener("touchstart",e=>{ const t=e.touches[0]; tsX=t.clientX; tsY=t.clientY; tMoved=false; },{passive:true});
+  box.addEventListener("touchmove",e=>{ const t=e.touches[0]; if(tsY!==null&&(Math.abs(t.clientY-tsY)>8||Math.abs(t.clientX-tsX)>8)) tMoved=true; },{passive:true});
   box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse") e.preventDefault(); }));
-  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
+  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); if(tMoved){ tMoved=false; return; } const f=m[+b.dataset.ta];
     inp.value=f.fill||f.n; const a=$("#"+ids[0]); if(a){ a.value=f.a; a.classList.remove("need"); } const k=$("#"+ids[1]); if(k) k.value=f.km||"";
     inp.classList.remove("need"); box.remove(); if(k&&!k.value){ k.focus({preventScroll:true}); setTimeout(()=>sheetShow(inp),60); } else { inp.blur(); setTimeout(()=>sheetShow(inp),60); } toast("✅ Filled in"); }));
 }
