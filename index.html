@@ -80,7 +80,7 @@ svg.ic{width:1em;height:1em;vertical-align:-.14em;flex:none}
 /* bottom sheet */
 .sheet-bg{position:fixed;inset:0;background:rgba(17,24,39,.4);display:none;align-items:flex-end;justify-content:center;z-index:10}
 .sheet-bg.on{display:flex}
-.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:28px 28px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:28px 28px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));max-height:92%;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:9px;background:#d5d9e0;margin:0 auto 12px}
 .sheet h2{font-size:22px;font-weight:750;letter-spacing:-.02em;margin:2px 0 14px;display:flex;align-items:center;gap:10px}
 .lab{font-size:15px;font-weight:650;color:var(--muted);margin:16px 0 8px;display:flex;gap:8px;align-items:center}
@@ -448,7 +448,16 @@ const monthLabel = m => { const [y,mm]=m.split("-").map(Number); return `${MONTH
 const shiftMonth = (m,k) => { let [y,mm]=m.split("-").map(Number); mm+=k; while(mm<1){mm+=12;y--} while(mm>12){mm-=12;y++} return `${y}-${pad(mm)}`; };
 const inMonth = (arr) => arr.filter(x => x.date.slice(0,7)===month).sort((a,b)=>(a.date+(a.time||a.start||"")).localeCompare(b.date+(b.time||b.start||"")));
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",2600); }
-function openSheet(html){ const sh=$("#sheet"); sh.onclick=null; sh.oninput=null; sh.innerHTML=html; $("#sheetBg").classList.add("on"); }
+// iPhone: the keyboard covers the bottom of the screen and iOS slides the page up.
+// Keep the sheet and pop-ups inside the visible part, so they don't slide away.
+function fitToScreen(){ const vv=window.visualViewport; if(!vv) return;
+  ["sheetBg","popBg"].forEach(id=>{ const el=document.getElementById(id); if(!el) return;
+    el.style.top=vv.offsetTop+"px"; el.style.height=vv.height+"px"; el.style.bottom="auto"; }); }
+if(window.visualViewport){ visualViewport.addEventListener("resize",fitToScreen); visualViewport.addEventListener("scroll",fitToScreen); }
+// scroll the sheet (not the page) so a box sits near the top of the sheet
+function sheetShow(el,gap=56){ const sh=$("#sheet"); if(!el||!sh||!sh.contains(el)) return;
+  const d=el.getBoundingClientRect().top-sh.getBoundingClientRect().top-gap; if(Math.abs(d)>4) sh.scrollTop+=d; }
+function openSheet(html){ const sh=$("#sheet"); sh.onclick=null; sh.oninput=null; sh.innerHTML=html; sh.scrollTop=0; fitToScreen(); $("#sheetBg").classList.add("on"); }
 function closeSheet(){ $("#sheetBg").classList.remove("on"); }
 $("#sheetBg").addEventListener("click", e => { if (e.target.id==="sheetBg") closeSheet(); });
 
@@ -796,13 +805,15 @@ function taMatches(q){ const qn=taNorm(q).replace(/^dr /,""), words=qn.split(" "
 function taShow(inp){ const ids=inp.id==="nName"?["nAddr","nKm"]:["cAddr","cKm"]; let box=inp.nextElementSibling;
   if(!box||!box.classList.contains("ta")){ box=document.createElement("div"); box.className="ta"; inp.after(box); }
   const m=taMatches(inp.value); if(!m.length){ box.remove(); return; }
+  if(inp.id==="nName") sheetShow(inp);
   box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}${f.sp?`<span class="tsp"><b>${esc(f.sp)}</b>${f.city?` ${esc(f.city)}`:""}</span>`:""}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("")+(taMatches.more?`<div class="tah" style="text-align:center">🔍 ${taMatches.more} more · type more of the name</div>`:"");
   box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
     inp.value=f.fill||f.n; const a=$("#"+ids[0]); if(a){ a.value=f.a; a.classList.remove("need"); } const k=$("#"+ids[1]); if(k) k.value=f.km||"";
-    inp.classList.remove("need"); box.remove(); if(k&&!k.value) k.focus(); else inp.blur(); toast("✅ Filled in"); }));
+    inp.classList.remove("need"); box.remove(); if(k&&!k.value){ k.focus({preventScroll:true}); setTimeout(()=>sheetShow(inp),60); } else { inp.blur(); setTimeout(()=>sheetShow(inp),60); } toast("✅ Filled in"); }));
 }
 document.addEventListener("input",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")){ const a=$(t.id==="nName"?"#nAddr":"#cAddr"); if(a) a.value=""; taShow(t); } });
-document.addEventListener("focusin",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) loadABD(); if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
+document.addEventListener("focusin",e=>{ const t=e.target; if(t&&t.id==="nName"){ [60,350,700].forEach(ms=>setTimeout(()=>{ fitToScreen(); if(document.activeElement===t) sheetShow(t); },ms)); }
+  if(t&&(t.id==="nName"||t.id==="cName")) loadABD(); if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
 document.addEventListener("focusout",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) setTimeout(()=>{ const b=t.nextElementSibling; if(b&&b.classList.contains("ta")&&document.activeElement!==t) b.remove(); },250); });
 function suggestInput(el,title,getItems,onPick,newLabel){
   if(!el) return;
