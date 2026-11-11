@@ -1,6 +1,6 @@
 /* FSCD Forms & Tracker: keeps a copy of the app on the phone so it opens with no signal.
    Change the version below when lib/ or templates/ files change. */
-const CACHE = "fscd-tracker-v3";
+const CACHE = "fscd-tracker-v4";
 const FILES = ["./", "index.html", "manifest.json", "icon.png",
   "lib/pdf-lib.min.js", "lib/pdf.min.js", "lib/pdf.worker.min.js",
   "templates/medical.pdf", "templates/respite.pdf", "templates/mileage.pdf", "templates/triple.pdf",
