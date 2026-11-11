@@ -753,25 +753,54 @@ function taAll(){ if(TA_ALL) return TA_ALL; TA_ALL=[];
     c[2].forEach(d=>{ const dn=d.replace(" (NP)",""); TA_ALL.push({n:dn,a:c[1],sub:c[0],fill:dn+(/\(NP\)/.test(d)?", NP":"")+" ("+c[0]+")",em:"👤",rd:1,doc:1}); }); });
   AB_FAC.forEach(f=>{ if(!TA_ALL.some(x=>taNorm(x.n)===taNorm(f[0]))) TA_ALL.push({n:f[0],a:f[1],em:"🏥",rd:/red deer/i.test(f[1])?1:0}); });
   return TA_ALL; }
+/* All Alberta doctors (source: CPSA Medical Directory Listings, cpsa.ca). Loaded from data/ab-doctors.json the first time the box is used. */
+let ABD=null, abdP=null;
+const AB_NEAR=/^(red deer|sylvan lake|blackfalds|lacombe|innisfail|penhold|springbrook)$/i;
+function loadABD(){ if(abdP) return abdP;
+  abdP=fetch("data/ab-doctors.json").then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(j=>{
+    ABD=j.d.map(r=>{ const city=r[2]>=0?j.c[r[2]]:"", sp=j.s[r[3]], ad=r[4]>=0?j.a[r[4]]:"";
+      return {f:r[0],l:r[1],city,sp,a:ad,nt:taNorm(r[0]+" "+r[1]).split(" "),ot:taNorm(city+" "+sp).split(" "),near:AB_NEAR.test(city)}; });
+    // the list arrived while typing: refresh the suggestions
+    const el=document.activeElement; if(el&&(el.id==="nName"||el.id==="cName")&&el.value.trim().length>=2) taShow(el);
+  }).catch(()=>{ abdP=null; });
+  return abdP; }
+function abdMatches(qn,words,taken){
+  if(!ABD||qn.length<2) return [];
+  const out=[];
+  for(const d of ABD){
+    let nameHit=false, ok=true;
+    for(const w of words){ if(d.nt.some(h=>h.startsWith(w))){ nameHit=true; continue; } if(!d.ot.some(h=>h.startsWith(w))){ ok=false; break; } }
+    if(!ok||!nameHit) continue;
+    const fill=`Dr. ${d.f?d.f[0]+". ":""}${d.l} (${d.sp})`;
+    if(taken.has(taNorm(fill))) continue;
+    const nm=taNorm(d.l+" "+d.f), allName=words.every(w=>d.nt.some(h=>h.startsWith(w)));
+    out.push([(nm.startsWith(qn)?3:0)+(allName?3:0)+(d.near?1:0)-0.25,{n:`Dr. ${d.f} ${d.l}`.replace(/\s+/g," "),a:d.a,sub:[d.sp,d.city].filter(Boolean).join(" · "),fill,em:"👤",doc:1}]);
+  }
+  return out; }
 function taMatches(q){ const qn=taNorm(q).replace(/^dr /,""), words=qn.split(" ").filter(Boolean);
   const mine=(data.settings.clinics||[]).map(c=>({n:c.name,a:c.address,km:c.km,em:"⭐",mine:1}));
+  taMatches.more=0;
   if(!qn) return mine.slice(-6).reverse();
   if(qn.length<2) return [];
   const all=mine.concat(taAll().filter(x=>!mine.some(m=>taNorm(m.n)===taNorm(x.fill||x.n))));
   const sc=x=>{ const nm=taNorm(x.n).replace(/^dr /,""), hay=(x.doc?nm:nm+" "+taNorm(x.a)).split(" ");
     if(!words.every(w=>hay.some(h=>h.startsWith(w)))) return -1;
     const nw=nm.split(" "); return (nm.startsWith(qn)?3:0)+(words.every(w=>nw.some(h=>h.startsWith(w)))?3:0)+(x.mine?5:0)+(x.rd?1:0)+(x.doc?0:0.5); };
-  return all.map(x=>[sc(x),x]).filter(y=>y[0]>=0).sort((a,b)=>b[0]-a[0]).slice(0,6).map(y=>y[1]); }
+  const hits=all.map(x=>[sc(x),x]).filter(y=>y[0]>=0);
+  const taken=new Set(all.map(x=>taNorm(x.fill||x.n)));
+  const res=hits.concat(abdMatches(qn,words,taken)).sort((a,b)=>b[0]-a[0]);
+  taMatches.more=Math.max(0,res.length-6);
+  return res.slice(0,6).map(y=>y[1]); }
 function taShow(inp){ const ids=inp.id==="nName"?["nAddr","nKm"]:["cAddr","cKm"]; let box=inp.nextElementSibling;
   if(!box||!box.classList.contains("ta")){ box=document.createElement("div"); box.className="ta"; inp.after(box); }
   const m=taMatches(inp.value); if(!m.length){ box.remove(); return; }
-  box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("");
+  box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("")+(taMatches.more?`<div class="tah" style="text-align:center">🔍 ${taMatches.more} more · type more of the name</div>`:"");
   box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
     inp.value=f.fill||f.n; const a=$("#"+ids[0]); if(a){ a.value=f.a; a.classList.remove("need"); } const k=$("#"+ids[1]); if(k) k.value=f.km||"";
     inp.classList.remove("need"); box.remove(); if(k&&!k.value) k.focus(); else inp.blur(); toast("✅ Filled in"); }));
 }
 document.addEventListener("input",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")){ const a=$(t.id==="nName"?"#nAddr":"#cAddr"); if(a) a.value=""; taShow(t); } });
-document.addEventListener("focusin",e=>{ const t=e.target; if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
+document.addEventListener("focusin",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) loadABD(); if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
 document.addEventListener("focusout",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) setTimeout(()=>{ const b=t.nextElementSibling; if(b&&b.classList.contains("ta")&&document.activeElement!==t) b.remove(); },250); });
 function suggestInput(el,title,getItems,onPick,newLabel){
   if(!el) return;
