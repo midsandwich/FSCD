@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FSCD Forms &amp; Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FSCD Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#2f5d8a">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<script defer src="lib/pdf-lib.min.js"></script>
+<style>
+:root{
+  --bg:#f3f4f6; --card:#ffffff; --ink:#0b1220; --muted:#3f4754; --line:#cfd4dc; --soft:#eceff3;
+  --doc:#0e9f7e; --doc-soft:#e6f6f1; --resp:#f2711c; --resp-soft:#fff0e6;
+  --blue:#3867d6; --blue-soft:#eaf0fc; --violet:#7c5cdb; --violet-soft:#f1edfc;
+  --red:#e0483e; --red-soft:#fdeceb; --radius:20px;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.04);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);min-height:100vh}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 120px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button,input,textarea,a{touch-action:manipulation}
+svg.ic{width:1em;height:1em;vertical-align:-.14em;flex:none}
+.num{display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--ink);color:#fff;font-size:.7em;font-weight:700}
+/* header */
+.top{display:flex;align-items:center;gap:12px;margin:4px 0 20px}
+.top h1{font-size:28px;font-weight:750;letter-spacing:-.02em;margin:0;flex:1;display:flex;align-items:center;gap:10px}
+.top h1 svg.ic{font-size:26px;color:var(--muted)}
+.iconbtn{width:48px;height:48px;border-radius:50%;background:var(--card);font-size:22px;display:grid;place-items:center;box-shadow:var(--shadow);color:var(--ink)}
+/* home tiles */
+.tiles{display:grid;gap:12px}
+.tile{display:flex;align-items:center;gap:16px;padding:18px;border-radius:var(--radius);background:var(--card);text-align:left;box-shadow:var(--shadow)}
+.tile .em{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;flex:none}
+.tile.doc .em{background:var(--doc-soft);color:var(--doc)} .tile.resp .em{background:var(--resp-soft);color:var(--resp)} .tile.trip .em{background:var(--blue-soft);color:var(--blue)}
+.tile .t{font-size:21px;font-weight:700;letter-spacing:-.01em}
+.tile .s{font-size:15px;color:var(--muted);margin-top:2px}
+.tile::after{content:"›";margin-left:auto;font-size:28px;color:#c3c7cf;font-weight:300}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.start{display:flex;align-items:center;gap:14px;width:100%;background:var(--blue);color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:14px;text-align:left;box-shadow:var(--shadow)}
+.start .em{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:26px;flex:none}
+.start b{display:block;font-size:22px} .start span span{font-size:17px;opacity:.95} .start .chev{margin-left:auto;font-size:30px}
+.mini{background:var(--card);border-radius:var(--radius);padding:16px 6px 14px;text-align:center;font-size:14px;font-weight:600;box-shadow:var(--shadow);position:relative;color:var(--ink)}
+.mini .em{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin:0 auto 8px;font-size:22px;background:var(--soft);color:var(--ink)}
+.mini:nth-child(1) .em{background:var(--doc-soft);color:var(--doc)} .mini:nth-child(2) .em{background:var(--violet-soft);color:var(--violet)} .mini:nth-child(3) .em{background:#fff6d9;color:#b7860b}
+.mini .dot{position:absolute;top:10px;right:12px;background:var(--red);color:#fff;border-radius:999px;font-size:12px;min-width:22px;height:22px;line-height:22px;padding:0 6px;font-weight:700}
+/* month switcher */
+.month{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:999px;padding:5px;margin-bottom:14px;box-shadow:var(--shadow)}
+.month b{font-size:18px;font-weight:700}
+.month button{width:46px;height:46px;font-size:24px;border-radius:50%;color:var(--muted)}
+.month button:active{background:var(--soft)}
+/* lists */
+.list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:14px}
+.item{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow);width:100%}
+.item .em{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:var(--soft);color:var(--muted);flex:none}
+.item .main{flex:1;min-width:0}
+.item .a{font-size:17px;font-weight:650}
+.item .b{font-size:15px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .go{margin-left:auto;font-size:28px;color:#8b93a1;padding:0 4px}
+.item .x{width:40px;height:40px;border-radius:50%;font-size:18px;color:#9aa0aa;background:var(--soft);display:grid;place-items:center}
+.empty{text-align:center;color:var(--muted);font-size:17px;padding:34px 10px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
+.empty .em{font-size:40px;display:block;margin-bottom:8px;color:#c3c7cf}
+/* buttons */
+.big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border-radius:18px;font-size:19px;font-weight:700;color:#fff;margin-top:10px;letter-spacing:-.01em}
+.big .em{font-size:22px;display:inline-flex}
+.big.doc{background:var(--doc)} .big.resp{background:var(--resp)} .big.trip,.big.blue{background:var(--blue)} .big.red{background:var(--red)}
+.big.ghost{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.big:active{transform:scale(.99);filter:brightness(.96)}
+.big[disabled]{opacity:.45}
+/* totals */
+.total{display:flex;gap:10px;margin-bottom:14px}
+.total div{flex:1;background:var(--card)!important;border-radius:18px;padding:14px;text-align:center;box-shadow:var(--shadow)}
+.total b{display:block;font-size:26px;font-weight:750;letter-spacing:-.02em}
+.total span{font-size:15px;color:var(--muted)}
+/* bottom sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(17,24,39,.4);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.sheet-bg.on{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:28px 28px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet::before{content:"";display:block;width:40px;height:5px;border-radius:9px;background:#d5d9e0;margin:0 auto 12px}
+.sheet h2{font-size:22px;font-weight:750;letter-spacing:-.02em;margin:2px 0 14px;display:flex;align-items:center;gap:10px}
+.lab{font-size:15px;font-weight:650;color:var(--muted);margin:16px 0 8px;display:flex;gap:8px;align-items:center}
+.lab .em{font-size:17px;display:inline-flex}
+input,select,textarea{font:inherit;font-size:18px;width:100%;padding:15px 16px;border-radius:16px;border:1.5px solid transparent;background:var(--card);color:var(--ink);-webkit-appearance:none;appearance:none;box-shadow:inset 0 0 0 1.5px var(--line)}
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:inset 0 0 0 2px var(--blue)}
+::placeholder{color:#a3a9b3}
+.chips{display:grid;gap:8px}
+.chip{background:var(--card);border-radius:16px;padding:14px 16px;text-align:left;font-size:17px;font-weight:650;box-shadow:inset 0 0 0 1.5px var(--line)}
+.chip small{display:block;font-weight:400;font-size:15px;color:var(--muted);margin-top:2px}
+.chip.on{box-shadow:inset 0 0 0 2.5px var(--doc);background:var(--doc-soft)}
+.chip.svc{display:flex;align-items:center;gap:12px}
+.chip.svc .tick{width:28px;height:28px;border-radius:8px;box-shadow:inset 0 0 0 2px #8b93a1;display:grid;place-items:center;flex:none;color:#fff;font-size:16px}
+.chip.svc.on .tick{background:var(--doc);box-shadow:none}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px;background:var(--soft);padding:4px;border-radius:14px}
+.seg button{flex:1;padding:12px;border-radius:11px;font-size:17px;font-weight:650;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+/* setup cards */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 4px;font-size:18px;font-weight:700;display:flex;gap:8px;align-items:center}
+.card h3 svg.ic{color:var(--muted)}
+.card input,.card select,.card textarea{background:var(--soft);box-shadow:none}
+.card input:focus,.card select:focus,.card textarea:focus{box-shadow:inset 0 0 0 2px var(--blue);background:#fff}
+.hint{font-size:15px;color:var(--muted)}
+.clin{display:flex;gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.clin div{flex:1;font-size:16px}
+.clin small{color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:12px 18px;border-radius:999px;font-size:16px;font-weight:600;z-index:40;display:none;max-width:90vw;text-align:center}
+.withcam{display:flex;gap:8px;align-items:stretch}
+.withcam input{flex:1;min-width:0}
+.cam{flex:none;width:58px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);font-size:24px;position:relative;display:grid;place-items:center}
+.cam.has{box-shadow:inset 0 0 0 2.5px var(--doc);background:var(--doc-soft)}
+.cam .cn{position:absolute;top:-7px;right:-7px;background:var(--doc);color:#fff;border-radius:999px;font-size:13px;min-width:22px;height:22px;line-height:22px;font-weight:700;padding:0 5px}
+.cam .cn:empty{display:none}
+.pbox{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.pth{position:relative;width:92px;height:92px;border-radius:14px;overflow:hidden;background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--line)}
+.pth img{width:100%;height:100%;object-fit:cover;display:block}
+.pth .pk{position:absolute;left:4px;bottom:4px;background:#fff;border-radius:8px;padding:2px 5px;font-size:16px;line-height:1}
+.pth .px{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;background:rgba(17,24,39,.72);color:#fff;font-size:15px}
+.pth .gone{display:grid;place-items:center;height:100%;font-size:28px;color:var(--muted)}
+.pwarn{background:#fff3d6;color:#7a4b00;border-radius:12px;padding:10px 12px;font-size:16px;font-weight:600;margin-top:8px}
+.rbadge{box-shadow:inset 0 0 0 2px var(--red);color:var(--red);border-radius:10px;padding:3px 8px;font-size:14px;font-weight:700;white-space:nowrap;flex:none}
+.warn{background:var(--red-soft);color:#9b2c25;border-radius:16px;padding:14px;font-size:16px;margin-bottom:12px}
+.ready{background:var(--card);border-radius:var(--radius);padding:20px;text-align:center;font-size:18px;box-shadow:var(--shadow)}
+.ready .em{font-size:40px;display:block;margin-bottom:6px;color:var(--doc)}
+.ready b{font-size:20px}
+.steps{display:flex;justify-content:center;align-items:center;gap:10px;font-size:24px;margin:12px 0 4px;color:var(--muted)}
+/* to-do */
+.check{display:flex;gap:14px;align-items:center;background:var(--card);border-radius:18px;padding:14px;margin-bottom:10px;width:100%;text-align:left;box-shadow:var(--shadow)}
+.check .box{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 2px #cfd3da;display:grid;place-items:center;font-size:16px;flex:none;color:#fff}
+.check.done .box{background:var(--doc);box-shadow:none}
+.check.done .t{text-decoration:line-through;color:var(--muted)}
+.check .t{font-size:17px;font-weight:650}
+.check .s{font-size:15px;color:var(--muted);margin-top:2px}
+.check .em2{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:var(--soft);color:var(--muted);flex:none}
+.info{background:var(--card);border-radius:18px;padding:14px;margin-bottom:10px;display:flex;gap:14px;box-shadow:var(--shadow)}
+.info .em{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:var(--soft);color:var(--ink);flex:none}
+.info b{font-size:17px;display:block;margin-bottom:2px}
+.info div{font-size:15px;line-height:1.4;color:#374151}
+/* questions (FAQ) */
+.fsearch{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:18px;padding:4px 6px 4px 16px;box-shadow:inset 0 0 0 2px var(--line);margin-bottom:6px}
+.fsearch .em{font-size:22px;color:var(--muted);display:grid}
+.fsearch input{box-shadow:none;padding:14px 8px;background:transparent}
+.fsec-unused{font-size:18px;font-weight:800;margin:20px 4px 8px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+.faq{background:var(--card);border-radius:18px;margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
+.faq.open{box-shadow:inset 0 0 0 2.5px var(--blue)}
+.fq{display:flex;align-items:center;gap:14px;width:100%;padding:14px;text-align:left;color:var(--ink)}
+.fq .em{width:50px;height:50px;border-radius:15px;display:grid;place-items:center;font-size:24px;background:var(--blue-soft);color:var(--blue);flex:none}
+.fq .qt{flex:1;font-size:20px;font-weight:700;line-height:1.25}
+.fq .chev{font-size:28px;color:var(--muted);display:grid}
+.fcats{display:grid;gap:12px;margin-top:12px}
+.fcat{display:flex;align-items:center;gap:16px;padding:18px;border-radius:var(--radius);background:var(--card);text-align:left;box-shadow:var(--shadow);color:var(--ink)}
+.fcat .em{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;font-size:28px;background:var(--blue-soft);color:var(--blue);flex:none}
+.fcat .qt{flex:1;font-size:23px;font-weight:750}
+.fcat .n{min-width:34px;height:34px;border-radius:17px;background:var(--soft);display:grid;place-items:center;font-size:17px;font-weight:700;color:var(--muted)}
+.fcat .chev{font-size:28px;color:var(--muted);display:grid}
+#faqList{margin-top:12px}
+.fa{padding:0 16px 16px}
+.fa p{font-size:22px;line-height:1.4;margin:2px 0 12px;font-weight:600}
+.fa .mine{background:var(--doc-soft);color:#065f46;border-radius:14px;padding:12px 14px;font-size:19px;font-weight:700;display:flex;gap:8px;align-items:center}
+.fbtns{display:flex;gap:10px}
+.fbtns .big{margin-top:10px}
+.fbtns .say{width:76px;flex:none}
+.pgv{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.pgv canvas{width:100%;height:auto;display:block}
+html.xl .fq .qt{font-size:23px} html.xl .fa p{font-size:25px}
+/* wizard */
+.prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:4px 0 18px}
+.prog i{display:block;height:100%;background:var(--blue)}
+.wq{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:10px 0 14px;display:flex;gap:12px;align-items:center}
+.wq .em{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:24px;background:var(--violet-soft);color:var(--violet);flex:none}
+/* progress card */
+.fcard{display:flex;gap:14px;background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:12px;align-items:center;box-shadow:var(--shadow)}
+.fthumb{width:96px;min-height:72px;flex:none;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;position:relative;padding:0;cursor:pointer}
+.fthumb canvas{width:100%;height:auto;display:block}
+.fthumb .ph{font-size:28px;padding:20px 0;color:#c3c7cf}
+.fthumb .zoom{position:absolute;right:4px;bottom:4px;background:rgba(17,24,39,.75);color:#fff;border-radius:8px;font-size:13px;padding:3px 6px;display:grid;place-items:center}
+.fside{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.frow{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;color:var(--muted)}
+.frow span{display:flex;gap:6px;align-items:center}
+.frow b{font-size:16px;color:var(--ink)}
+.bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .3s}
+.bar.okb i{background:var(--doc)} .bar.lines i{background:var(--blue)}
+.fdone{font-size:15px;color:var(--doc);font-weight:600}
+.miss{display:flex;gap:12px;align-items:center;width:100%;background:var(--red-soft);color:#9b2c25;border-radius:16px;padding:12px 14px;font-size:15px;font-weight:650;text-align:left;margin-bottom:12px}
+.miss svg.ic{font-size:20px}
+/* date/time boxes */
+.dtbox{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:12px 16px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);font-size:18px;font-weight:650;text-align:left;color:var(--ink)}
+.dtbox .em{font-size:20px;color:var(--muted);display:inline-flex}
+.dtbox .ph{color:#a3a9b3;font-weight:500;font-size:17px}
+.dtbox .chev{margin-left:auto;color:#c3c7cf;font-size:22px}
+.dtbox.set{box-shadow:inset 0 0 0 2px var(--blue);background:var(--blue-soft)}
+.dtbox.set .em{color:var(--blue)}
+.row2 .dtbox{font-size:17px;padding:10px 12px;gap:8px;white-space:nowrap} .row2 .dtbox .chev{display:none}
+/* pop-up */
+.pop-bg{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;align-items:center;justify-content:center;z-index:30;padding:14px}
+.pop-bg.on{display:flex}
+.pop{background:var(--card);width:100%;max-width:420px;border-radius:26px;padding:18px;max-height:94vh;overflow:auto;box-shadow:0 20px 50px rgba(17,24,39,.25)}
+.pop h2{font-size:20px;font-weight:750;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.pop .big.ghost{box-shadow:none;background:var(--soft)}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cal-h button.nav{width:46px;height:46px;border-radius:50%;background:var(--soft);font-size:24px}
+.cal-h .t{font-size:18px;font-weight:700;padding:8px 12px;border-radius:12px}
+.cal-h .t.tap{background:var(--soft)}
+.cal-w{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin:8px 0}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-g button{aspect-ratio:1/1;border-radius:50%;font-size:17px;font-weight:600;min-height:40px}
+.cal-g button:active{background:var(--soft)}
+.cal-g button.today{box-shadow:inset 0 0 0 2px var(--blue);color:var(--blue)}
+.cal-g button.on{background:var(--blue);color:#fff;box-shadow:none}
+.cal-g button:disabled{opacity:.25}
+.cal-g .x{visibility:hidden}
+.ym{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ym button{min-height:52px;border-radius:14px;background:var(--soft);font-size:17px;font-weight:650}
+.ym button.on{background:var(--blue);color:#fff}
+.tp-big{text-align:center;font-size:36px;font-weight:750;letter-spacing:-.02em;margin:4px 0 8px}
+.tp-sec{font-size:15px;font-weight:650;color:var(--muted);margin:12px 0 6px;display:flex;gap:6px;align-items:center;text-transform:uppercase;letter-spacing:.04em}
+.tpg{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.tpg button{min-height:48px;border-radius:12px;background:var(--soft);font-size:17px;font-weight:650}
+.tpg button.on,.tpm button.on{background:var(--blue);color:#fff}
+.tpm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tpm button{min-height:52px;border-radius:14px;background:var(--soft);font-size:19px;font-weight:700}
+.sg{display:grid;gap:8px}
+.sg button{display:flex;align-items:center;gap:12px;background:var(--soft);border-radius:16px;padding:12px 14px;min-height:60px;text-align:left}
+.sg button .em{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;font-size:18px;color:var(--blue);flex:none}
+.sg button b{display:block;font-size:17px;font-weight:650}
+.sg button small{display:block;font-size:15px;color:var(--muted);margin-top:1px}
+.sg button.cur{box-shadow:inset 0 0 0 2px var(--blue);background:var(--blue-soft)}
+.sum{text-align:center;font-size:18px;font-weight:700;margin-top:14px;color:var(--muted);display:flex;gap:8px;justify-content:center;align-items:center}
+
+/* ---------- large print (poor near vision) ---------- */
+body{font-size:18px}
+.top h1{font-size:30px}
+.iconbtn{width:56px;height:56px;font-size:26px}
+.tile{padding:20px}
+.tile .em{width:62px;height:62px;font-size:32px}
+.tile .t{font-size:24px}
+.tile .s{font-size:18px;color:var(--muted)}
+.mini{font-size:17px;font-weight:700}
+.mini .em{width:52px;height:52px;font-size:26px}
+.month b{font-size:21px}
+.month button{width:54px;height:54px;font-size:28px;color:var(--ink)}
+.item{padding:16px}
+.item .em{width:48px;height:48px;font-size:24px}
+.item .a{font-size:20px;font-weight:700}
+.item .b{font-size:18px;color:var(--muted);font-weight:500;white-space:normal}
+.item .x{width:48px;height:48px;font-size:22px;color:var(--ink)}
+.empty{font-size:19px;color:var(--muted)}
+.big{min-height:66px;font-size:21px}
+.big .em{font-size:25px}
+.big.ghost{box-shadow:inset 0 0 0 2px var(--line)}
+.total b{font-size:30px}
+.total span{font-size:17px;color:var(--muted);font-weight:600}
+.sheet h2{font-size:25px}
+.lab{font-size:18px;font-weight:700;color:var(--ink)}
+.lab .em{font-size:20px}
+input,select,textarea{font-size:20px;box-shadow:inset 0 0 0 2px var(--line)}
+::placeholder{color:#6b7280}
+.chip{font-size:19px;box-shadow:inset 0 0 0 2px var(--line)}
+.chip small{font-size:16px;color:var(--muted)}
+.seg button{font-size:19px;color:var(--ink)}
+.card h3{font-size:21px}
+.hint{font-size:16px;color:var(--muted);font-weight:500}
+.clin div{font-size:18px}
+.toast{font-size:18px;padding:14px 20px}
+.warn{font-size:18px}
+.ready{font-size:20px} .ready b{font-size:22px}
+.steps{font-size:28px;color:var(--ink)}
+.check .t{font-size:19px;font-weight:700}
+.check .s{font-size:16px;color:var(--muted)}
+.check .box{width:34px;height:34px;font-size:18px;box-shadow:inset 0 0 0 2.5px #8b93a1}
+.check .em2{width:48px;height:48px;font-size:24px}
+.info b{font-size:19px}
+.info div{font-size:17px;color:var(--ink)}
+.info .em{width:48px;height:48px;font-size:24px}
+.wq{font-size:27px}
+.frow{font-size:16px;color:var(--ink)}
+.frow b{font-size:19px}
+.bar{height:11px}
+.fdone{font-size:15px}
+.miss{font-size:17px}
+.dtbox{min-height:64px;font-size:21px;box-shadow:inset 0 0 0 2px var(--line)}
+.dtbox .em{font-size:24px;color:var(--ink)}
+.dtbox .ph{font-size:19px;color:#4b5563}
+.row2 .dtbox{font-size:20px}
+.pop h2{font-size:23px}
+.cal-h .t{font-size:21px}
+.cal-h button.nav{width:54px;height:54px;font-size:28px}
+.cal-w{font-size:16px;color:var(--ink)}
+.cal-g button{font-size:21px;font-weight:700;min-height:44px}
+.cal-g button:disabled{opacity:.35}
+.ym button{font-size:20px;min-height:58px}
+.tp-big{font-size:42px}
+.tp-sec{font-size:15px;color:var(--ink)}
+.tpg button{font-size:21px;font-weight:700;min-height:54px}
+.tpm button{font-size:22px;min-height:58px}
+.sg button b{font-size:20px}
+.sg button small{font-size:16px;color:var(--muted)}
+.sg button .em{width:44px;height:44px;font-size:22px}
+.sum{font-size:21px;color:var(--ink)}
+/* missing / needed boxes */
+.need{box-shadow:inset 0 0 0 3px var(--red)!important;background:#fff4f3!important}
+input.need::placeholder,textarea.need::placeholder{color:#c0392b;font-weight:600}
+.dtbox.need .ph,.dtbox.need .em{color:#c0392b}
+.chips.need{border-radius:18px;padding:6px}
+.card.needcard{box-shadow:inset 0 0 0 3px var(--red),var(--shadow)}
+.needtxt{color:#c0392b;font-weight:700;font-size:16px;margin-top:6px}
+/* extra-large text option */
+html.xl .wrap, html.xl .sheet, html.xl .toast{zoom:1.15}
+html.xl .pop h2{font-size:25px} html.xl .cal-g button{font-size:22px} html.xl .tpg button,html.xl .tpm button{font-size:23px;min-height:58px} html.xl .tp-big{font-size:46px} html.xl .sg button b{font-size:22px}
+html.xl .item .em{display:none} html.xl .item .a{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.xl .tpg{grid-template-columns:repeat(6,1fr)}
+html.xl .item .b{white-space:normal}
+html.xl .item .a{font-size:19px}
+
+html.xl .row2{grid-template-columns:1fr}
+html.xl .minis{grid-template-columns:1fr 1fr 1fr}
+.ta{margin-top:8px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 2px var(--doc);overflow:hidden}
+.ta button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:12px 14px;min-height:62px;font-size:19px;font-weight:650;border-bottom:1.5px solid var(--line);background:transparent;color:var(--ink)}
+.ta button:last-child{border-bottom:0}
+.ta button small{display:block;font-size:15px;font-weight:500;color:var(--muted);margin-top:2px}
+.ta .tah{padding:8px 14px;font-size:15px;color:var(--muted);background:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="pop-bg" id="popBg"><div class="pop" id="pop"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+/* ---------- storage ---------- */
+const KEY = "fscd-tracker-v1", OLD_KEY = "fscd-old-v1";
+const blank = () => ({
+  settings: {
+    childName:"", childId:"", parentName:"",
+    worker:{name:"",address:"",postal:"",phone:"",related:"No",teen:"No"},
+    service:"Hourly Respite", wage:"", clinics:[],
+    home:"", phone:"", email:"", rate:"0.12"
+  },
+  appts:[], visits:[], trips:[], running:null, checks:{}, triple:{}
+});
+let data = blank();
+let storageOK = true;
+function load(){
+  try { let s = localStorage.getItem(KEY); if (!s) { s = localStorage.getItem(OLD_KEY); if (s) { localStorage.setItem(KEY, s); localStorage.removeItem(OLD_KEY); } } if (s) data = normalize(JSON.parse(s)); }
+  catch(e){ storageOK = false; }
+}
+function normalize(d){ const b=blank(); const out=Object.assign(b,d||{}); out.settings=Object.assign(blank().settings,(d&&d.settings)||{}); out.settings.worker=Object.assign(blank().settings.worker,out.settings.worker||{}); ["appts","visits","trips"].forEach(k=>{ if(!Array.isArray(out[k])) out[k]=[]; }); { const MAP={"Medical appointment (return trip)":"Medical appt (round trip)","Hospital stay (return trip)":"Hospital stay (round trip)","Medical appt":"Medical appt (round trip)","Hospital stay":"Hospital stay (round trip)"}; out.trips.forEach(t=>{ if(MAP[t.purpose]) t.purpose=MAP[t.purpose]; }); }
+  if(!Array.isArray(out.settings.services)||!out.settings.services.length) out.settings.services=[out.settings.service||"Hourly Respite"];
+  if(!out.settings.wages){ out.settings.wages={}; out.settings.wages[out.settings.services[0]]=out.settings.wage||""; }
+  if(!out.checks) out.checks={}; if(!out.triple) out.triple={}; return out; }
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(data)); storageOK = true; }
+  catch(e){ storageOK = false; try{ toast("⚠️ Couldn't save. Phone storage may be full."); }catch(_){} }
+}
+load();
+/* Test copies only (claude.ai link, a PC copy): fill fake child + worker info into EMPTY boxes,
+   so the tester doesn't retype it after every update. Never runs on GitHub Pages (the real copy). */
+const IS_TEST = !/(^|\.)github\.io$/i.test(location.hostname);
+if(IS_TEST){
+  const s=data.settings, w=s.worker; let changed=false;
+  const fill=(o,k,v)=>{ if(!String(o[k]||"").trim()){ o[k]=v; changed=true; } };
+  fill(s,"childName","Sam Sample"); fill(s,"childId","123456789");
+  fill(s,"parentName","Pat Parent"); fill(s,"home","456 Sample Ave, Red Deer AB T4N 0B2");
+  fill(w,"name","Jordan Tester"); fill(w,"address","123 Example St, Red Deer AB");
+  fill(w,"postal","T4N 0A1"); fill(w,"phone","403-555-0123");
+  if(changed) save();
+}
+
+
+/* ---------- line icons in place of emoji ---------- */
+const ICONS={"🚗": "<path d=\"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2\" /> <circle cx=\"7\" cy=\"17\" r=\"2\" /> <path d=\"M9 17h6\" /> <circle cx=\"17\" cy=\"17\" r=\"2\" />", "✅": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"m9 12 2 2 4-4\" />", "🏥": "<path d=\"M12 6v4\" /> <path d=\"M14 14h-4\" /> <path d=\"M14 18h-4\" /> <path d=\"M14 8h-4\" /> <path d=\"M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2\" /> <path d=\"M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18\" />", "🅿️": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M9 17V7h4a3 3 0 0 1 0 6H9\" />", "📅": "<path d=\"M8 2v4\" /> <path d=\"M16 2v4\" /> <rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" /> <path d=\"M3 10h18\" />", "🖨️": "<path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\" /> <path d=\"M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6\" /> <rect x=\"6\" y=\"14\" width=\"12\" height=\"8\" rx=\"1\" />", "🕒": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <polyline points=\"12 6 12 12 16 14\" />", "➜": "<path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" />", "📧": "<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\" /> <path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\" />", "⬅️": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />", "➕": "<path d=\"M5 12h14\" /> <path d=\"M12 5v14\" />", "📋": "<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\" /> <path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\" />", "⚙️": "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "🧑‍🤝‍🧑": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />", "👨‍👩‍👧": "<path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\" /> <path d=\"M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66\" /> <path d=\"m18 15-2-2\" /> <path d=\"m15 18-2-2\" />", "📍": "<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\" /> <circle cx=\"12\" cy=\"10\" r=\"3\" />", "✏️": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />", "📞": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\" />", "📄": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\" /> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" /> <path d=\"M10 9H8\" /> <path d=\"M16 13H8\" /> <path d=\"M16 17H8\" />", "📝": "<path d=\"M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4\" /> <path d=\"M2 6h4\" /> <path d=\"M2 10h4\" /> <path d=\"M2 14h4\" /> <path d=\"M2 18h4\" /> <path d=\"M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z\" />", "👧": "<path d=\"M9 12h.01\" /> <path d=\"M15 12h.01\" /> <path d=\"M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5\" /> <path d=\"M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1\" />", "💾": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"7 10 12 15 17 10\" /> <line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\" />", "👆": "<path d=\"M22 14a8 8 0 0 1-8 8\" /> <path d=\"M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2\" /> <path d=\"M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1\" /> <path d=\"M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10\" /> <path d=\"M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15\" />", "▶️": "<polygon points=\"6 3 20 12 6 21 6 3\" />", "🗑️": "<path d=\"M3 6h18\" /> <path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\" /> <path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\" /> <line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\" /> <line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\" />", "🔍": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />", "❓": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\" /> <path d=\"M12 17h.01\" />", "✍️": "<path d=\"m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284\" /> <path d=\"M3 21h18\" />", "✕": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />", "🏦": "<line x1=\"3\" x2=\"21\" y1=\"22\" y2=\"22\" /> <line x1=\"6\" x2=\"6\" y1=\"18\" y2=\"11\" /> <line x1=\"10\" x2=\"10\" y1=\"18\" y2=\"11\" /> <line x1=\"14\" x2=\"14\" y1=\"18\" y2=\"11\" /> <line x1=\"18\" x2=\"18\" y1=\"18\" y2=\"11\" /> <polygon points=\"12 2 20 7 4 7\" />", "⏹️": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />", "⏳": "<path d=\"M5 22h14\" /> <path d=\"M5 2h14\" /> <path d=\"M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22\" /> <path d=\"M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2\" />", "📶": "<path d=\"M12 20h.01\" /> <path d=\"M8.5 16.429a5 5 0 0 1 7 0\" /> <path d=\"M5 12.859a10 10 0 0 1 5.17-2.69\" /> <path d=\"M19 12.859a10 10 0 0 0-2.007-1.523\" /> <path d=\"M2 8.82a15 15 0 0 1 4.177-2.643\" /> <path d=\"M22 8.82a15 15 0 0 0-11.288-3.764\" /> <path d=\"m2 2 20 20\" />", "💻": "<path d=\"M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16\" />", "📷": "<path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z\" /> <circle cx=\"12\" cy=\"13\" r=\"3\" />", "➡️": "<path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" />", "⚠️": "<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\" /> <path d=\"M12 9v4\" /> <path d=\"M12 17h.01\" />", "💡": "<path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\" /> <path d=\"M9 18h6\" /> <path d=\"M10 22h4\" />", "🏠": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" /> <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />", "♻️": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\" /> <path d=\"M3 3v5h5\" />", "🌙": "<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\" />", "🗂️": "<path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\" />", "👪": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />", "🗣️": "<path d=\"m5 8 6 6\" /> <path d=\"m4 14 6-6 2-3\" /> <path d=\"M2 5h12\" /> <path d=\"M7 2h1\" /> <path d=\"m22 22-5-10-5 10\" /> <path d=\"M14 18h6\" />", "👀": "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "✉️": "<path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\" /> <path d=\"m21.854 2.147-10.94 10.939\" />", "✓": "<path d=\"M20 6 9 17l-5-5\" />", "▾": "<path d=\"m6 9 6 6 6-6\" />", "🌅": "<path d=\"M12 2v8\" /> <path d=\"m4.93 10.93 1.41 1.41\" /> <path d=\"M2 18h2\" /> <path d=\"M20 18h2\" /> <path d=\"m19.07 10.93-1.41 1.41\" /> <path d=\"M22 22H2\" /> <path d=\"m8 6 4-4 4 4\" /> <path d=\"M16 18a4 4 0 0 0-8 0\" />", "☀️": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />", "🌆": "<path d=\"M12 10V2\" /> <path d=\"m4.93 10.93 1.41 1.41\" /> <path d=\"M2 18h2\" /> <path d=\"M20 18h2\" /> <path d=\"m19.07 10.93-1.41 1.41\" /> <path d=\"M22 22H2\" /> <path d=\"m16 6-4 4-4-4\" /> <path d=\"M16 18a4 4 0 0 0-8 0\" />", "🔁": "<path d=\"m17 2 4 4-4 4\" /> <path d=\"M3 11v-1a4 4 0 0 1 4-4h14\" /> <path d=\"m7 22-4-4 4-4\" /> <path d=\"M21 13v1a4 4 0 0 1-4 4H3\" />", "🛏️": "<path d=\"M2 4v16\" /> <path d=\"M2 8h18a2 2 0 0 1 2 2v10\" /> <path d=\"M2 17h20\" /> <path d=\"M6 8v9\" />", "💵": "<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" /> <path d=\"M6 12h.01M18 12h.01\" />", "🙋": "<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\" /> <circle cx=\"12\" cy=\"7\" r=\"4\" />", "🎂": "<path d=\"M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8\" /> <path d=\"M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1\" /> <path d=\"M2 21h20\" /> <path d=\"M7 8v3\" /> <path d=\"M12 8v3\" /> <path d=\"M17 8v3\" /> <path d=\"M7 4h.01\" /> <path d=\"M12 4h.01\" /> <path d=\"M17 4h.01\" />", "🔢": "<line x1=\"4\" x2=\"20\" y1=\"9\" y2=\"9\" /> <line x1=\"4\" x2=\"20\" y1=\"15\" y2=\"15\" /> <line x1=\"10\" x2=\"8\" y1=\"3\" y2=\"21\" /> <line x1=\"16\" x2=\"14\" y1=\"3\" y2=\"21\" />", "🩺": "<path d=\"M11 2v2\" /> <path d=\"M5 2v2\" /> <path d=\"M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1\" /> <path d=\"M8 15a6 6 0 0 0 12 0v-3\" /> <circle cx=\"20\" cy=\"10\" r=\"2\" />", "🧑‍💼": "<path d=\"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\" /> <rect width=\"20\" height=\"14\" x=\"2\" y=\"6\" rx=\"2\" />", "👥": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />", "🎯": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <circle cx=\"12\" cy=\"12\" r=\"6\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" />", "🎉": "<path d=\"M5.8 11.3 2 22l10.7-3.79\" /> <path d=\"M4 3h.01\" /> <path d=\"M22 8h.01\" /> <path d=\"M15 2h.01\" /> <path d=\"M22 20h.01\" /> <path d=\"m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10\" /> <path d=\"m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17\" /> <path d=\"m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7\" /> <path d=\"M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z\" />", "📊": "<path d=\"M3 3v16a2 2 0 0 0 2 2h16\" /> <path d=\"M18 17V9\" /> <path d=\"M13 17V5\" /> <path d=\"M8 17v-3\" />", "🚫": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"m4.9 4.9 14.2 14.2\" />"};
+Object.assign(ICONS,{
+ "⭐":'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+ "👤":'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ "🧾":'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>',
+ "🍽":'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+ "⏱":'<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+ "🔊":'<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+ "👕":'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',
+ "✈":'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+ "💬":'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+ "🤷":'<circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 9h.01"/><path d="M15 9h.01"/>',
+ "🖼":'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'
+});
+const ICON_KEYS=Object.keys(ICONS).sort((a,b)=>b.length-a.length);
+const KEYCAP=/([1-9])\uFE0F?\u20E3/g;
+function iconSVG(e){ return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[e]}</svg>`; }
+function iconize(root){
+  if(!root||root.nodeType!==1&&root.nodeType!==3) return;
+  const base=root.nodeType===3?root.parentNode:root; if(!base||!base.isConnected) return;
+  const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT,{acceptNode:n=>{ const p=n.parentNode; if(!p||/^(TEXTAREA|SCRIPT|STYLE|INPUT|OPTION)$/.test(p.nodeName)) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
+  const hits=[]; let n; while((n=walker.nextNode())){ const t=n.nodeValue; if(KEYCAP.test(t)||ICON_KEYS.some(k=>t.includes(k))) hits.push(n); KEYCAP.lastIndex=0; }
+  hits.forEach(node=>{
+    let html=esc(node.nodeValue).replace(KEYCAP,(m,d)=>`<span class="num">${d}</span>`);
+    for(const k of ICON_KEYS){ if(html.includes(k)) html=html.split(k).join(iconSVG(k)); }
+    html=html.replace(/\uFE0F/g,"");
+    const span=document.createElement("span"); span.innerHTML=html;
+    const frag=document.createDocumentFragment(); while(span.firstChild) frag.appendChild(span.firstChild);
+    if(node.parentNode) node.parentNode.replaceChild(frag,node);
+  });
+}
+new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(x=>iconize(x)); if(m.type==="characterData") iconize(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2,10);
+const pad = n => String(n).padStart(2,"0");
+const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const nowHM = () => { const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MON3 = ["Jan.","Feb.","Mar.","Apr.","May","June","July","Aug.","Sept.","Oct.","Nov.","Dec."];
+const DAY3 = ["Sun.","Mon.","Tue.","Wed.","Thu.","Fri.","Sat."];
+const parseISO = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const shortDate = s => { const d=parseISO(s); return `${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}`; };
+const time12 = hm => { if(!hm) return ""; let [h,m]=hm.split(":").map(Number); const ap=h>=12?"PM":"AM"; h=h%12||12; return `${h}:${pad(m)} ${ap}`; };
+const hoursOf = v => {
+  if (!v.start || !v.end) return 0;
+  const [a,b]=v.start.split(":").map(Number), [c,d]=v.end.split(":").map(Number);
+  let mins=(c*60+d)-(a*60+b); if (mins<=0) mins+=24*60;
+  return Math.round(mins/60*100)/100;
+};
+const fmtH = h => (Math.round(h*100)/100).toString();
+const money = n => "$" + (Math.round(n*100)/100).toFixed(2);
+// services: a worker may provide more than one type; each has its own wage and column on the form
+const DAYS_SVC="24 Hour Respite";
+const svcList=()=>{ const s=data.settings; return (Array.isArray(s.services)&&s.services.length)?s.services:[s.service||"Hourly Respite"]; };
+const svcOf=v=>(v&&v.service)||svcList()[0];
+const isDaysSvc=sv=>sv===DAYS_SVC;
+const visitQty=v=>isDaysSvc(svcOf(v))?(+v.days||0):hoursOf(v);
+const wageOf=sv=>{ const w=data.settings.wages||{}; return parseFloat(w[sv])||0; };
+const unitOf=sv=>isDaysSvc(sv)?"day":"hr";
+const SVC_SHORT={"Hourly Respite":"Respite","Work Related Child Care":"Work child care","Domestic Child Care":"Child care","Homemaking":"Homemaking","Sibling Care":"Sibling care","Community Support Aide":"Community aide","Personal Care Aide Support":"Personal care","Behavioural or Developmental Aide Support":"Behaviour aide","24 Hour Respite":"24 h respite"};
+const respTotals=list=>{ let hours=0,days=0,cost=0; list.forEach(v=>{ const sv=svcOf(v), q=visitQty(v); if(isDaysSvc(sv)) days+=q; else hours+=q; cost+=q*wageOf(sv); }); return {hours,days,cost}; };
+let month = todayISO().slice(0,7);
+const monthLabel = m => { const [y,mm]=m.split("-").map(Number); return `${MONTHS[mm-1]} ${y}`; };
+const shiftMonth = (m,k) => { let [y,mm]=m.split("-").map(Number); mm+=k; while(mm<1){mm+=12;y--} while(mm>12){mm-=12;y++} return `${y}-${pad(mm)}`; };
+const inMonth = (arr) => arr.filter(x => x.date.slice(0,7)===month).sort((a,b)=>(a.date+(a.time||a.start||"")).localeCompare(b.date+(b.time||b.start||"")));
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",2600); }
+function openSheet(html){ const sh=$("#sheet"); sh.onclick=null; sh.oninput=null; sh.innerHTML=html; $("#sheetBg").classList.add("on"); }
+function closeSheet(){ $("#sheetBg").classList.remove("on"); }
+$("#sheetBg").addEventListener("click", e => { if (e.target.id==="sheetBg") closeSheet(); });
+
+const SERVICES = ["Hourly Respite","Work Related Child Care","Domestic Child Care","Homemaking","Sibling Care","Community Support Aide","Personal Care Aide Support","Behavioural or Developmental Aide Support","24 Hour Respite"];
+
+/* ---------- screens ---------- */
+const SETUP_KEYS=[["childName"],["childId"],["parentName"],["home"],["worker","name"],["clinics"]];
+const setupDone=()=>SETUP_KEYS.filter(k=>{ const st=data.settings; if(k[0]==="clinics") return st.clinics.length>0; if(k[0]==="worker") return !!(st.worker&&String(st.worker.name||"").trim()); return !!String(st[k[0]]||"").trim(); }).length;
+function homeLine(kind){
+  if(kind==="doc"){ const n=inMonth(data.appts).length; return n?`${n} appointment${n>1?"s":""} this month`:"Appointments"; }
+  if(kind==="resp"){ const l=inMonth(data.visits); if(!l.length) return "Worker hours"; const T=respTotals(l); return `${l.length} visit${l.length>1?"s":""} · ${T.hours?fmtH(T.hours)+" h":""}${T.hours&&T.days?" + ":""}${T.days?fmtH(T.days)+" days":""}`; }
+  const l=tripsInMonth(); if(!l.length) return "Km and parking"; const km=l.reduce((a,t)=>a+(+t.km||0),0); return `${l.length} trip${l.length>1?"s":""} · ${fmtH(km)} km`;
+}
+let screen = "home";
+function go(s){ if(screen==="setup"&&s!=="setup"){ const n=$("#cName"), a=$("#cAddr"); if(n&&n.value.trim()){ data.settings.clinics.push({id:uid(),name:n.value.trim(),address:a?a.value.trim():"",km:(($("#cKm")||{}).value||"").trim()}); save(); toast("✅ Doctor or hospital saved"); } }
+  if(s==="triple"&&screen!=="triple"){ const st=wizSteps(); const i=st.findIndex(w=>!w.optional&&!(data.triple[w.k]||"").trim()); wiz=i<0?st.length:i; } if(s==="faq"&&screen!=="faq"){ faqCat=null; faqOpen=null; } screen=s; render(); window.scrollTo(0,0); }
+
+function applyTextSize(){ document.documentElement.classList.toggle("xl",data.settings.textSize==="XL"); }
+function render(){ applyTextSize(); renderInner(); if(screen==="setup"){ refreshReq(); bindDT("agStart","date",data.settings,"agreementStart",{dob:false,title:"Agreement start date",ph:"Tap to pick · or leave for Jan 1"},()=>save()); } if(["doc","resp","trip"].includes(screen)) scheduleThumb(screen); if(screen==="triple") scheduleThumb("triple"); }
+function renderInner(){
+  const app=$("#app");
+  const st=data.settings;
+  const needsSetup = !st.childName || !st.childId;
+  if (screen==="home"){
+    app.innerHTML = `
+      <div class="top"><h1>FSCD Forms &amp; Tracker</h1><button class="iconbtn" data-go="setup" aria-label="Settings">⚙️</button></div>
+      ${!storageOK?`<div class="warn">⚠️ This browser can't save. Add to Home Screen first.</div>`:""}
+      ${needsSetup?`<button class="start" data-go="setup"><span class="em">⚙️</span><span><b>Start here</b><span>Fill in Setup once · ${setupDone()} of ${SETUP_KEYS.length} done</span></span><span class="chev">›</span></button>`:""}
+      <div class="hint" style="margin:2px 4px 10px;font-weight:700;color:var(--ink)">${MONTHS[+month.slice(5,7)-1]}</div>
+      <div class="tiles">
+        <button class="tile doc" data-go="doc"><span class="em">🏥</span><span><div class="t">Doctor</div><div class="s">${homeLine("doc")}</div></span></button>
+        <button class="tile resp" data-go="resp"><span class="em">🧑‍🤝‍🧑</span><span><div class="t">Respite</div><div class="s">${homeLine("resp")}</div></span></button>
+        <button class="tile trip" data-go="trip"><span class="em">🚗</span><span><div class="t">Trips</div><div class="s">${homeLine("trip")}</div></span></button>
+      </div>
+      ${backupCard()}
+      <div class="minis">
+        <button class="mini" data-go="check"><span class="em">✅</span>To do${todoLeft()?`<span class="dot">${todoLeft()}</span>`:""}</button>
+        <button class="mini" data-go="triple"><span class="em">👨‍👩‍👧</span>Triple P</button>
+        <button class="mini" data-go="faq"><span class="em">❓</span>Questions</button>
+      </div>`;
+  }
+  else if (screen==="doc"){
+    const list=inMonth(data.appts);
+    app.innerHTML = `
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>🏥 Doctor</h1></div>
+      ${monthBar()}
+      ${formCard("doc",list.length)}
+      ${limitCard("doc")}
+      ${(()=>{ const X=apptExtras(list); if(!X.meals&&!X.hotel&&!X.missing) return "";
+        return `<div class="total"><div><b>${money(X.meals)}</b><span>🍽️ meals</span></div><div><b>${money(X.hotel)}</b><span>🛏️ hotel</span></div></div>`
+          +(X.missing?`<div class="warn">🧾 ${X.missing} hotel receipt${X.missing>1?"s":""} missing</div>`:""); })()}
+      <div class="list">${list.length? list.map(a=>`
+        <button class="item${rcptMissing(a)?" need":""}" data-edit-appt="${a.id}" style="text-align:left"><span class="em">🏥</span><div class="main"><div class="a">${esc(shortDate(a.date))} · ${esc(time12(a.time))}</div><div class="b">${esc(a.name)}${a.long?` · ⏱️ 8 h+${+a.meals?` · 🍽️ ${money(+a.meals)}`:""}${+a.hotel?` · 🛏️ ${money(+a.hotel)}`:""}`:""}</div></div>${rcptMissing(a)?`<span class="rbadge">🧾 Receipt</span>`:""}<span class="go">›</span></button>`).join("")
+        : `<div class="empty"><span class="em">📅</span>No appointments yet<br><span class="hint">Tap “Add appointment” below</span></div>`}</div>
+      ${list.length?`<div class="hint" style="text-align:center;margin:-4px 0 4px">Tap one to change it</div>`:""}
+      <button class="big doc" data-act="add-appt"><span class="em">➕</span>Add appointment</button>
+      <button class="big ghost" data-act="print-doc"><span class="em">🖨️</span>Print form</button>
+      ${photoCount(list)?`<button class="big ghost" data-act="save-photos-doc"><span class="em">🖼️</span>Save ${photoCount(list)} receipt photo${photoCount(list)>1?"s":""}</button>`:""}
+      <div class="hint" style="text-align:center;margin-top:8px">Print it before the visit. The doctor or hospital signs it.</div>`;
+  }
+  else if (screen==="resp"){
+    const list=inMonth(data.visits);
+    const TT=respTotals(list), multi=svcList().length>1;
+    app.innerHTML = `
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>🧑‍🤝‍🧑 Respite</h1></div>
+      ${monthBar()}
+      ${formCard("resp",list.length)}
+      ${limitCard("resp")}
+      <div class="total"><div><b>${TT.days&&!TT.hours?fmtH(TT.days):fmtH(TT.hours)}</b><span>${TT.days&&!TT.hours?"days":"hours"}${TT.days&&TT.hours?` + ${fmtH(TT.days)} days`:""}</span></div><div><b>${money(TT.cost)}</b><span>total</span></div></div>
+      <div class="list">${list.length? list.map(v=>`
+        <button class="item" data-edit-visit="${v.id}" style="text-align:left"><span class="em">🕒</span><div class="main"><div class="a">${esc(shortDate(v.date))} · ${isDaysSvc(svcOf(v))?`${esc(v.days)} day(s)`:`${fmtH(hoursOf(v))} h`}</div><div class="b">${isDaysSvc(svcOf(v))?"":`${esc(time12(v.start))} – ${esc(time12(v.end))}${v.end<=v.start?" 🌙":""}`}${multi?`${isDaysSvc(svcOf(v))?"":" · "}${esc(SVC_SHORT[svcOf(v)]||svcOf(v))}`:""}</div></div>
+        <span class="go">›</span></button>`).join("")
+        : `<div class="empty"><span class="em">🕒</span>No visits yet<br><span class="hint">Tap “Add visit” below</span></div>`}</div>
+      ${list.length?`<div class="hint" style="text-align:center;margin:-4px 0 4px">Tap one to change it</div>`:""}
+      <button class="big resp" data-act="add-visit"><span class="em">➕</span>Add visit</button>
+      <button class="big ghost" data-act="print-resp"><span class="em">🖨️</span>Print form</button>
+      <div class="hint" style="text-align:center;margin-top:8px">Print at the end of the month. You and the worker sign it.</div>`;
+  }
+  else if (screen==="trip"){
+    const list=tripsInMonth();
+    const km=list.reduce((s,t)=>s+(+t.km||0),0), park=list.reduce((s,t)=>s+(+t.parking||0),0), rate=parseFloat(st.rate)||0;
+    app.innerHTML = `
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>🚗 Trips</h1></div>
+      ${monthBar()}
+      ${formCard("trip",list.length)}
+      <div class="total"><div style="background:#e6eef7"><b>${fmtH(km)}</b><span>km</span></div><div style="background:#e6eef7"><b>${money(km*rate+parkClaim(list))}</b><span>total</span></div></div>
+      ${park>parkClaim(list)?`<div class="pwarn" style="margin:-4px 0 14px">⚠️ Parking over $10 a day isn't paid. ${money(park-parkClaim(list))} left out.</div>`:""}
+      <div class="list">${list.length? list.map(t=>`
+        <button class="item" style="text-align:left" data-edit-trip="${t.key}"><span class="em">${t.auto?"🏥":"🚗"}</span><div class="main"><div class="a">${esc(shortDate(t.date))} · ${esc(t.km||"?")} km${+t.parking?` · 🅿️ ${money(+t.parking)}`:""}</div><div class="b">${esc(t.toName||t.to)}</div></div><span class="go">›</span></button>`).join("")
+        : `<div class="empty"><span class="em">🚗</span>No trips yet<br><span style="font-size:16px">Doctor visits show up here by themselves</span></div>`}</div>
+      ${list.length?`<div class="hint" style="text-align:center;margin:-4px 0 4px">Doctor visits show up here by themselves · tap one to change km or parking</div>`:""}
+      <button class="big ghost" data-act="add-trip"><span class="em">➕</span>Add other trip</button>
+      <button class="big trip" data-act="print-trip"><span class="em">🖨️</span>Print log</button>
+      ${photoCount(list)?`<button class="big ghost" data-act="save-photos-trip"><span class="em">🖼️</span>Save ${photoCount(list)} receipt photo${photoCount(list)>1?"s":""}</button>`:""}
+      <div class="hint" style="text-align:center;margin-top:8px">Keep the log with your parking receipts.</div>`;
+  }
+  else if (screen==="check"){
+    app.innerHTML = `
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>✅ To do</h1></div>
+      ${TODO.map(t=>`<button class="check ${data.checks[t.id]?"done":""}" data-check="${t.id}"><span class="box">${data.checks[t.id]?"✓":""}</span><span class="em2">${t.em}</span><span style="flex:1"><div class="t">${t.t}</div><div class="s">${t.s}</div></span></button>
+        ${t.id==="bank"&&!data.checks.bank?`<button class="big ghost" data-act="bank-help" style="margin:-4px 0 14px;min-height:56px;font-size:19px">🏦 Show me how</button>`:""}
+        ${t.id==="triple"&&!data.checks.triple?`<button class="big ghost" data-go="triple" style="margin:-4px 0 14px;min-height:56px;font-size:19px">👨‍👩‍👧 Start it</button>`:""}`).join("")}
+      <div class="info"><span class="em">📞</span><div><b>Questions?</b>FSCD: 1-888-278-7088<br><span class="hint">(voicemail line)</span></div></div>`;
+  }
+  else if (screen==="triple"){
+    renderWizard(app);
+  }
+  else if (screen==="faq"||screen==="info"){
+    const q=$("#faqQ")?$("#faqQ").value:"";
+    app.innerHTML = faqHTML();
+    const box=$("#faqQ"); box.value=q; box.oninput=faqFilter; faqFilter();
+  }
+  else if (screen==="setup"){
+    const w=st.worker;
+    app.innerHTML = `
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>⚙️ Setup</h1></div>
+      <p class="hint" style="font-size:17px;margin-top:-6px">Fill in once. It saves by itself as you type, on this phone only.</p>
+      <div class="card"><h3>👧 Child</h3>
+        <div class="lab">Child's name</div><input data-req data-f="childName" value="${esc(st.childName)}" autocomplete="off" maxlength="40">
+        <div class="lab">FSCD Child / File ID #</div><input data-req data-f="childId" value="${esc(st.childId)}" inputmode="numeric" autocomplete="off" maxlength="15">
+        <div class="lab">Your name (parent / guardian)</div><input data-req data-f="parentName" value="${esc(st.parentName)}" autocomplete="off" maxlength="40">
+        <div class="lab">🏠 Home address</div><input data-req data-f="home" value="${esc(st.home)}" placeholder="Street, city, postal code" maxlength="90">
+        <div class="row2"><div><div class="lab">📞 Phone</div><input data-f="phone" value="${esc(st.phone)}" inputmode="tel" maxlength="20"></div>
+        <div><div class="lab">📧 Email</div><input data-f="email" value="${esc(st.email)}" inputmode="email" autocapitalize="off" maxlength="60"></div></div>
+      </div>
+      <div class="card ${st.clinics.length?"":"needcard"}" id="clinicCard"><h3>🏥 Doctors &amp; hospitals</h3><div class="hint">For appointments. Km is for the trip log.</div>
+        ${st.clinics.length?"":`<div class="needtxt">⚠️ Add at least one doctor or hospital</div>`}
+        ${st.clinics.map(c=>`<div class="clin"><div><b>${esc(c.name)}</b><br><small>${[esc(c.address),c.km?`🚗 ${esc(c.km)} km round trip`:""].filter(Boolean).join(" · ")}</small></div><button class="x" style="width:44px;height:44px;border-radius:12px;background:var(--bg)" data-del-clinic="${c.id}">✕</button></div>`).join("")}
+        <div class="lab">Name</div><input id="cName" autocomplete="off" placeholder="Start typing, e.g. Red Deer" maxlength="70">
+        <input id="cAddr" type="hidden">
+        <div class="lab">🚗 Km there and back (from home)</div><input id="cKm" inputmode="decimal" placeholder="e.g. 14" maxlength="6">
+        <button class="big ghost" data-act="add-clinic" style="min-height:58px;font-size:20px;background:var(--bg)">➕ Add doctor or hospital</button>
+      </div>
+      <div class="card"><h3>🧑‍🤝‍🧑 Respite worker</h3>
+        <div class="lab">Name</div><input data-req data-w="name" value="${esc(w.name)}" maxlength="40">
+        <div class="lab">Address</div><input data-req data-w="address" value="${esc(w.address)}" maxlength="70">
+        <div class="row2"><div><div class="lab">Postal code</div><input data-req data-w="postal" value="${esc(w.postal)}" maxlength="7"></div>
+        <div><div class="lab">Phone</div><input data-req data-w="phone" value="${esc(w.phone)}" inputmode="tel" maxlength="16"></div></div>
+        <div class="lab">Related to the child?</div>${seg("related",w.related)}
+        ${w.related==="Yes"?ruleNote("related"):""}
+        <div class="lab">Is the worker 16–17?</div>${seg("teen",w.teen)}
+        ${w.teen==="Yes"?ruleNote("teen"):""}
+        <div class="lab">Type of service <span class="hint" style="font-weight:500">(tap all that apply)</span></div>
+        <div class="chips">${SERVICES.map(sv=>`<button class="chip svc ${svcList().includes(sv)?"on":""}" data-svc="${esc(sv)}"><span class="tick">${svcList().includes(sv)?"✓":""}</span>${esc(sv)}</button>`).join("")}</div>
+        ${svcList().map(sv=>`<div class="lab">Wage for ${esc(sv)} ($ per ${isDaysSvc(sv)?"day":"hour"})</div><input data-req data-wage="${esc(sv)}" value="${esc((st.wages||{})[sv]||"")}" inputmode="decimal" placeholder="e.g. 15.00" maxlength="8">`).join("")}
+      </div>
+      <div class="card"><h3>📊 Yearly limits</h3>
+        <div class="hint">From the FSCD package. Change them if your agreement says something different.</div>
+        <div class="lab">Agreement start date</div>${dtBoxHTML("agStart","date",st.agreementStart||"","Tap to pick · or leave for Jan 1")}
+        <div class="row2"><div><div class="lab">Respite hours</div><input data-f="limResp" value="${esc(st.limResp??"240")}" inputmode="numeric" maxlength="4"></div>
+        <div><div class="lab">Appointments</div><input data-f="limDoc" value="${esc(st.limDoc??"36")}" inputmode="numeric" maxlength="3"></div></div>
+      </div>
+      <div class="card"><h3>🚗 Mileage</h3>
+        <div class="lab">Rate ($ per km)</div><input data-f="rate" value="${esc(st.rate)}" inputmode="decimal" maxlength="5">
+        <div class="hint">FSCD pays $0.12 per km (2026 info package).</div>
+      </div>
+      <div class="card"><h3>🔍 Text size</h3>
+        <div class="seg"><button data-tsize="L" class="${(st.textSize||"L")==="L"?"on":""}">Large</button><button data-tsize="XL" class="${st.textSize==="XL"?"on":""}" style="font-size:23px">Extra large</button></div>
+      </div>
+      <div class="card"><h3>💾 Backup</h3><div class="hint">Copy a backup code and keep it in Notes. Paste it here to restore.</div>
+        <button class="big ghost" data-act="backup" style="min-height:58px;font-size:20px;background:var(--bg)">📋 Copy backup code</button>
+        <textarea id="restoreBox" rows="3" placeholder="Paste backup code here" style="margin-top:12px;font-size:15px"></textarea>
+        <button class="big ghost" data-act="restore" style="min-height:58px;font-size:20px;background:var(--bg)">♻️ Restore</button>
+      </div>
+      <button class="big blue" data-go="home"><span class="em">✅</span>Done</button>`;
+  }
+}
+function seg(key,val){ return `<div class="seg">${["Yes","No"].map(o=>`<button data-seg="${key}" data-v="${o}" class="${val===o?"on":""}">${o}</button>`).join("")}</div>`; }
+function monthBar(){ return `<div class="month"><button data-act="prev" aria-label="Previous month">‹</button><b>${monthLabel(month)}</b><button data-act="next" aria-label="Next month">›</button></div>`; }
+
+/* ---------- pop-up calendar + time picker ---------- */
+function closePop(){ $("#popBg").classList.remove("on"); $("#pop").onclick=null; }
+$("#popBg").addEventListener("click",e=>{ if(e.target.id==="popBg") closePop(); });
+// opts: {max:"YYYY-MM-DD", dob:true, title}
+function openDatePop(val,onPick,opts={}){
+  const t=parseISO(todayISO());
+  let cur=val?parseISO(val):(opts.dob?new Date(t.getFullYear()-8,t.getMonth(),1):t);
+  let vy=cur.getFullYear(), vm=cur.getMonth(), mode="days";
+  const draw=()=>{
+    let html=`<h2 style="margin:0 0 10px">📅 ${esc(opts.title||"Pick a day")}</h2>`;
+    if(mode==="years"){
+      const ys=[]; for(let y=t.getFullYear(); y>=t.getFullYear()-25; y--) ys.push(y);
+      html+=`<div class="ym">${ys.map(y=>`<button data-y="${y}" class="${y===vy?"on":""}">${y}</button>`).join("")}</div>`;
+    } else if(mode==="months"){
+      html+=`<div class="cal-h"><span class="t">${vy}</span></div><div class="ym">${MONTHS.map((m,i)=>`<button data-m="${i}" class="${i===vm?"on":""}">${m.slice(0,3)}</button>`).join("")}</div>`;
+    } else {
+      const first=new Date(vy,vm,1), dim=new Date(vy,vm+1,0).getDate(), off=first.getDay();
+      const ti=todayISO(); let cells="";
+      for(let i=0;i<off;i++) cells+=`<span class="x"></span>`;
+      for(let d=1; d<=dim; d++){ const iso=`${vy}-${pad(vm+1)}-${pad(d)}`; const dis=opts.max&&iso>opts.max;
+        cells+=`<button data-d="${iso}" class="${iso===ti?"today":""} ${iso===val?"on":""}" ${dis?"disabled":""}>${d}</button>`; }
+      html+=`<div class="cal-h"><button class="nav" data-nav="-1" aria-label="Previous month">‹</button>
+          <span class="t ${opts.dob?"tap":""}" ${opts.dob?'data-ymode="1"':""}>${MONTHS[vm]} ${vy}${opts.dob?" ▾":""}</span>
+          <button class="nav" data-nav="1" aria-label="Next month">›</button></div>
+        <div class="cal-w"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div class="cal-g">${cells}</div>`;
+      if(!opts.dob) html+=`<button class="big ghost" data-today="1" style="min-height:56px;font-size:19px;margin-top:12px">📍 Today</button>`;
+    }
+    html+=`<button class="big ghost" data-cancel="1" style="min-height:52px;font-size:18px;margin-top:8px">Cancel</button>`;
+    $("#pop").innerHTML=html;
+  };
+  draw(); $("#popBg").classList.add("on");
+  $("#pop").onclick=e=>{
+    const b=e.target.closest("button,[data-ymode]"); if(!b) return;
+    if(b.dataset.nav){ vm+=+b.dataset.nav; if(vm<0){vm=11;vy--} if(vm>11){vm=0;vy++} draw(); }
+    else if(b.dataset.ymode){ mode="years"; draw(); }
+    else if(b.dataset.y){ vy=+b.dataset.y; mode="months"; draw(); }
+    else if(b.dataset.m!==undefined){ vm=+b.dataset.m; mode="days"; draw(); }
+    else if(b.dataset.d){ closePop(); onPick(b.dataset.d); }
+    else if(b.dataset.today){ closePop(); onPick(todayISO()); }
+    else if(b.dataset.cancel){ closePop(); }
+  };
+}
+function openTimePop(val,onPick,title){
+  let [h,m]=val?val.split(":").map(Number):[null,null];
+  const groups=[["🌅 Morning",[6,7,8,9,10,11]],["☀️ Afternoon",[12,13,14,15,16,17]],["🌆 Evening",[18,19,20,21,22,23]],["🌙 Night",[0,1,2,3,4,5]]];
+  const short=x=>`${x%12||12}`;
+  const draw=()=>{
+    $("#pop").innerHTML=`<h2 style="margin:0 0 4px">🕒 ${esc(title||"Pick a time")}</h2>
+      <div class="tp-big">${h===null?"--:--":time12(`${pad(h)}:${pad(m||0)}`)}</div>
+      <div class="hint" style="text-align:center;font-size:16px">${h===null?"1. Tap the hour":"2. Tap the minutes"}</div>
+      ${groups.map(g=>`<div class="tp-sec">${g[0]} <span style="font-weight:500">(${g[1][0]<12?"AM":"PM"})</span></div><div class="tpg">${g[1].map(x=>`<button data-h="${x}" class="${x===h?"on":""}">${short(x)}</button>`).join("")}</div>`).join("")}
+      <div class="tp-sec">Minutes</div>
+      <div class="tpm">${[0,15,30,45].map(x=>`<button data-m="${x}" class="${h!==null&&x===m?"on":""}">:${pad(x)}</button>`).join("")}</div>
+      <button class="big trip" data-done="1" style="min-height:60px;font-size:21px"><span class="em">✅</span>Done</button>
+      <button class="big ghost" data-cancel="1" style="min-height:52px;font-size:18px;margin-top:8px">Cancel</button>`;
+  };
+  draw(); $("#popBg").classList.add("on");
+  $("#pop").onclick=e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.h){ h=+b.dataset.h; if(m===null) m=0; draw(); }
+    else if(b.dataset.m!==undefined){ if(h===null){ toast("👆 Tap the hour first"); return; } m=+b.dataset.m; closePop(); onPick(`${pad(h)}:${pad(m)}`); }
+    else if(b.dataset.done){ if(h===null){ toast("👆 Tap the hour first"); return; } closePop(); onPick(`${pad(h)}:${pad(m||0)}`); }
+    else if(b.dataset.cancel){ closePop(); }
+  };
+}
+// a tappable box that opens the right pop-up
+function dtBoxHTML(id,type,val,ph){
+  const em=type==="date"?"📅":"🕒";
+  const txt = val ? (type==="date"? (()=>{ const d=parseISO(val); return `${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; })() : time12(val)) : "";
+  return `<button class="dtbox ${val?"set":""}" id="${id}" type="button"><span class="em">${em}</span>${val?esc(txt):`<span class="ph">${esc(ph||"Tap to pick")}</span>`}<span class="chev">›</span></button>`;
+}
+// state[key] holds the value; box re-renders itself after a pick
+function bindDT(id,type,state,key,opts={},after){
+  const el=$("#"+id); if(!el) return;
+  el.onclick=e=>{ e.stopPropagation();
+    const done=v=>{ state[key]=v; el.outerHTML=dtBoxHTML(id,type,v,opts.ph); bindDT(id,type,state,key,opts,after); after&&after(); };
+    const fresh=()=>{ if(type==="date") openDatePop(state[key],done,opts); else openTimePop(state[key],done,opts.title); };
+    const items=opts.suggest?opts.suggest():[];
+    if(items.length) openSuggestPop(`${type==="date"?"📅":"🕒"} ${esc(opts.title||"")}`,items,it=>{ if(opts.onSuggest) opts.onSuggest(it); done(it.value); },fresh,type==="date"?"📅 Pick another day":"🕒 Pick another time",state[key]);
+    else fresh();
+  };
+}
+
+/* ---------- FSCD rules for who can be hired (from the footnotes on form FSCD0003) ---------- */
+const REL_OK=["Hourly Respite","24 Hour Respite"];
+const TEEN_OK=["Hourly Respite","Work Related Child Care","Homemaking","Community Support Aide"];
+function ruleNote(kind){
+  const L=svcList();
+  if(kind==="related"){
+    const bad=L.filter(x=>!REL_OK.includes(x)); const teenRel=(data.settings.worker||{}).teen==="Yes";
+    return `<div class="info" style="margin-top:10px;background:${bad.length||teenRel?"var(--red-soft)":"var(--blue-soft)"}"><span class="em">${bad.length?"⚠️":"💡"}</span><div><b>Family can be hired</b>An adult relative (18+) can do Hourly Respite or 24 Hour Respite, with FSCD's OK first, but not a parent. Ask your FSCD worker before they start.${(data.settings.worker||{}).teen==="Yes"?`<br><b style="display:inline;color:#9b2c25">A 16–17 year old can't be a relative.</b>`:""}${bad.length?`<br><b style="display:inline;color:#9b2c25">Not for: ${bad.map(esc).join(", ")}</b>`:""}</div></div>`;
+  }
+  const bad=L.filter(x=>!TEEN_OK.includes(x)).concat((data.settings.worker||{}).related==="Yes"?["a relative"]:[]);
+  return `<div class="info" style="margin-top:10px;background:${bad.length?"var(--red-soft)":"var(--blue-soft)"}"><span class="em">${bad.length?"⚠️":"💡"}</span><div><b>16–17 year olds</b>Must not be a relative. Can do Hourly Respite, Homemaking, Community Support Aide, and Work Related Child Care (for children 13 or older). Everything else needs someone 18 or older.${bad.length?`<br><b style="display:inline;color:#9b2c25">Not for: ${bad.map(esc).join(", ")}</b>`:""}</div></div>`;
+}
+
+/* ---------- red boxes for missing things ---------- */
+function refreshReq(){ document.querySelectorAll("[data-req]").forEach(el=>{ const empty=!String(el.value||"").trim(); el.classList.toggle("need",empty); if(empty&&!el.placeholder) el.placeholder="Needed"; }); }
+// mark a box red, bring it into view, and say what's missing
+function need(sel,msg){ const el=typeof sel==="string"?$(sel):sel; if(msg) toast(msg); if(!el) return false;
+  el.classList.add("need"); el.scrollIntoView({behavior:"smooth",block:"center"});
+  if(el.matches("input,textarea")){ el.focus({preventScroll:true}); el.addEventListener("input",()=>el.classList.remove("need"),{once:true}); }
+  else el.addEventListener("click",()=>el.classList.remove("need"),{once:true});
+  return false; }
+
+/* ---------- suggestions from earlier entries ---------- */
+// items: [{label, sub, value, em}] ; onNew: what "Something new" does
+function openSuggestPop(title,items,onPick,onNew,newLabel,current){
+  $("#pop").innerHTML=`<h2 style="margin:0 0 4px">${title}</h2>
+    <div class="hint" style="font-size:16px;margin-bottom:12px">Used before · tap one</div>
+    <div class="sg">${items.map((it,i)=>`<button data-sg="${i}" class="${current!==undefined&&String(it.value)===String(current)?"cur":""}"><span class="em">${it.em||"🔁"}</span><span><b>${esc(it.label)}</b>${it.sub?`<small>${esc(it.sub)}</small>`:""}</span></button>`).join("")}</div>
+    <button class="big trip" data-new="1" style="min-height:60px;font-size:20px">${esc(newLabel||"➕ Something new")}</button>
+    <button class="big ghost" data-cancel="1" style="min-height:52px;font-size:18px;margin-top:8px">Cancel</button>`;
+  $("#popBg").classList.add("on");
+  $("#pop").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.sg!==undefined){ closePop(); onPick(items[+b.dataset.sg]); }
+    else if(b.dataset.new){ closePop(); onNew(); }
+    else if(b.dataset.cancel){ closePop(); } };
+}
+// unique by key, newest first, max n
+function uniqRecent(list,keyFn,n=6){ const seen=new Set(), out=[]; for(const x of list){ const k=keyFn(x); if(!k||seen.has(k)) continue; seen.add(k); out.push(x); if(out.length>=n) break; } return out; }
+const byNewest=(a,b)=>((b.date||"")+(b.time||b.start||"")).localeCompare((a.date||"")+(a.time||a.start||""));
+// a text input that offers earlier entries first; "Something new" focuses it for typing
+
+/* ---------- Alberta facility type-ahead (source: Alberta Health, Hospital services & Community ambulatory care centres in Alberta, July 2018) ---------- */
+const AB_FAC=[["Bassano Health Centre","608 5 Avenue, Bassano AB T0J 0B0"],["Crowsnest Pass Health Centre","2001-107 Street, Blairmore AB T0K 0E0"],["Bow Island Health Centre","938 Centre St., Bow Island AB T0K 0G0"],["Brooks Health Centre","440 3rd St. E., Brooks AB T1R 0G5"],["Cardston Health Centre","144-2nd Street W., Cardston AB T0K 0K0"],["Coaldale Health Centre","2100-11 Street, Coaldale AB T1M 1L2"],["Fort Macleod Health Centre","744-26 Street, Fort Macleod AB T0L 0Z0"],["Chinook Regional Hospital","960-19 Street South, Lethbridge AB T1J 1W5"],["Medicine Hat Regional Hospital","666-5th Street S.W., Medicine Hat AB T1A 4H6"],["Milk River Health Centre","517 Centre Ave. E., Milk River AB T0K 1M0"],["Big Country Hospital","312 3rd Avenue E., Oyen AB T0J 2J0"],["Pincher Creek Health Centre","1222 Mill Avenue, Pincher Creek AB T0K 1W0"],["Raymond Health Centre","150 N-4 Street E., Raymond AB T0K 2S0"],["Taber Health Centre","4326 50 Avenue, Taber AB T1G 1N9"],["Mineral Springs Hospital","305 Lynx Street, Banff AB T1L 1H7"],["Oilfields General Hospital","717 Government Road, Black Diamond AB T0L 0H0"],["Alberta Children's Hospital","2888 Shaganappi Trail NW, Calgary AB T3B 6A8"],["Foothills Medical Centre","1403-29 Street NW, Calgary AB T2N 2T9"],["Peter Lougheed Centre","3500-26 Avenue NE, Calgary AB T1Y 6J4"],["Richmond Road Diagnostic & Treatment Centre","1820 Richmond Road SW, Calgary AB T2T 5C7"],["Rockyview General Hospital","7007-14 Street SW, Calgary AB T2V 1P9"],["South Health Campus","4448 Front Street SE, Calgary AB T3M 1M4"],["Canmore General Hospital","1100 Hospital Place, Canmore AB T1W 1N2"],["Claresholm General Hospital","221-43 Avenue West, Claresholm AB T0L 0T0"],["Didsbury District Health Services","1210-20 Avenue, Didsbury AB T0M 0W0"],["High River General Hospital","560-9 Avenue SW, High River AB T1V 1B3"],["Strathmore District Health Services","200 Brent Blvd., Strathmore AB T1P 1J9"],["Vulcan Community Health Centre","610 Elizabeth Street S, Vulcan AB T0L 2B0"],["St. Mary's Hospital","4607-53 Street, Camrose AB T4V 1Y5"],["Our Lady of the Rosary Hospital","5402-47 Street, Castor AB T0C 0X0"],["Consort Hospital and Care Centre","5402-52 Avenue, Consort AB T0C 1B0"],["Coronation Hospital and Care Centre","5000 Municipal Road, Coronation AB T0C 1C0"],["Daysland Health Centre","5920-51 Avenue, Daysland AB T0B 1A0"],["Drayton Valley Hospital and Care Centre","4550 Madsen Avenue, Drayton Valley AB T7A 1N8"],["Drumheller Health Centre","351-9 Street NW, Drumheller AB T0J 0Y1"],["Hanna Health Centre","904 Centre St. N., Hanna AB T0J 1P0"],["Hardisty Health Centre","4531-47 Avenue, Hardisty AB T0B 1V0"],["Innisfail Health Centre","5023-42 Street, Innisfail AB T4G 1A9"],["Killam Health Care Centre","5203-49 Avenue, Killam AB T0B 2L0"],["Lacombe Hospital and Care Centre","5430-47 Avenue, Lacombe AB T4L 1G8"],["Lamont Health Care Centre","5216-53 Street, Lamont AB T0B 2R0"],["Olds Hospital and Care Centre","3901-57 Avenue, Olds AB T4H 1T4"],["Ponoka Hospital and Care Centre","5800-57 Avenue, Ponoka AB T4J 1P1"],["Provost Health Centre","5002-54 Avenue, Provost AB T0B 3S0"],["Red Deer Regional Hospital Centre","3942-50A Avenue, Red Deer AB T4N 4E7"],["Rimbey Hospital and Care Centre","5228-50 Avenue, Rimbey AB T0C 2J0"],["Rocky Mountain House Health Centre","5016-52 Avenue, Rocky Mountain House AB T4T 1T2"],["Stettler Hospital and Care Centre","5912-47 Avenue, Stettler AB T0C 2L0"],["Sundre Hospital and Care Centre","709-1 Street N.E., Sundre AB T0M 1X0"],["Three Hills Health Centre","1504 2nd Street N., Three Hills AB T0M 2A0"],["Tofield Health Centre","5543-44 Street, Tofield AB T0B 4J0"],["Two Hills Health Centre","4401-53 Avenue, Two Hills AB T0B 4K0"],["St. Joseph's General Hospital","5241-43 Street, Vegreville AB T9C 1R5"],["Vermilion Health Centre","5720-50 Avenue, Vermilion AB T9X 1K7"],["Viking Health Centre","5110-57 Avenue, Viking AB T0B 4N0"],["Wainwright Health Centre","530-6 Avenue, Wainwright AB T9W 1R6"],["Wetaskiwin Hospital and Care Centre","6910-47 Street, Wetaskiwin AB T9A 3N3"],["Devon General Hospital","101 Erie Street South, Devon AB T9G 1A6"],["Glenrose Rehabilitation Hospital","10230-111 Avenue, Edmonton AB T5G 0B7"],["Grey Nuns Community Hospital","1100 Youville Drive West, Edmonton AB T6L 5X8"],["Misericordia Community Hospital","16940-87 Avenue, Edmonton AB T5R 4H5"],["Northeast Community Health Centre","14007-50 Street, Edmonton AB T5A 5E4"],["Royal Alexandra Hospital","10240 Kingsway Avenue, Edmonton AB T5H 3V9"],["Stollery Children's Hospital","8440-112 Street, Edmonton AB T6G 2B7"],["University of Alberta Hospital","8440-112 Street, Edmonton AB T6G 2B7"],["Fort Saskatchewan Community Hospital","9401-86 Avenue, Fort Saskatchewan AB T8L 0C6"],["Leduc Community Hospital","4210-48 Street, Leduc AB T9E 5Z3"],["Strathcona Community Hospital","9000 Emerald Drive, Sherwood Park AB T8H 0J3"],["Sturgeon Community Hospital","201 Boudreau Road, St. Albert AB T8N 6C4"],["WestView Health Centre - Stony Plain","4405 South Park Drive, Stony Plain AB T7Z 2M7"],["Athabasca Healthcare Centre","3100-48 Avenue, Athabasca AB T9S 1M9"],["Barrhead Healthcare Centre","4815-51 Avenue, Barrhead AB T7N 1M1"],["Beaverlodge Municipal Hospital","422-10A Street, Beaverlodge AB T0H 0C0"],["Bonnyville Healthcare Centre","5001 Lakeshore Drive, Bonnyville AB T9N 2J7"],["Boyle Healthcare Centre","5004 Lakeview Road, Boyle AB T0A 0M0"],["Cold Lake Healthcare Centre","314-25 Street, Cold Lake AB T9M 1G6"],["Edson Healthcare Centre","3837-6 Avenue, Edson AB T7E 0C5"],["Elk Point Healthcare Centre","5310-50 Avenue, Elk Point AB T0A 1A0"],["Fairview Health Complex","10628-110 St., Fairview AB T0H 1L0"],["Northern Lights Regional Health Centre","7 Hospital Street, Fort McMurray AB T9H 1P2"],["St. Theresa General Hospital","4506-46 Avenue, Fort Vermilion AB T0H 1N0"],["Fox Creek Healthcare Centre","600-3 St., Fox Creek AB T0H 1P0"],["Grande Cache Community Health Complex","10200 Shand Avenue, Grande Cache AB T0E 0Y0"],["Grimshaw/Berwyn and District Community Health Centre","5621 Wilcox Road, Grimshaw AB T0H 1W0"],["Northwest Health Centre","11202-100 Avenue, High Level AB T0H 1Z0"],["High Prairie Health Complex","5101-38 Street, High Prairie AB T0G 1E0"],["Hinton Healthcare Centre","1280 Switzer Drive, Hinton AB T7V 1V2"],["Seton - Jasper Healthcare Centre","518 Robson Street, Jasper AB T0E 1E0"],["William J. Cadzow - Lac La Biche Healthcare Centre","9110-93 Street, Lac La Biche AB T0A 2C0"],["Manning Community Health Centre","600 2nd Street NE, Manning AB T0H 2M0"],["Mayerthorpe Healthcare Centre","4417-45 Street, Mayerthorpe AB T0E 1N0"],["Sacred Heart Community Health Centre","350-3 Avenue NW, McLennan AB T0H 2L0"],["Peace River Community Health Centre","10101-68 St., Peace River AB T8S 1T6"],["Redwater Health Centre","4812-58 Street, Redwater AB T0A 2W0"],["Slave Lake Healthcare Centre","309 6 Street NE, Slave Lake AB T0G 2A2"],["George McDougall - Smoky Lake Healthcare Centre","4212-55 Avenue, Smoky Lake AB T0A 3C0"],["Central Peace Health Complex","5010-45 Avenue, Spirit River AB T0H 3G0"],["St. Therese - St. Paul Healthcare Centre","4713-48 Avenue, St. Paul AB T0A 3A3"],["Swan Hills Healthcare Centre","29 Freeman Drive, Swan Hills AB T0G 2C0"],["Valleyview Health Centre","4802 Highway St. E., Valleyview AB T0H 3N0"],["Wabasca/Desmarais Healthcare Centre","881 Mistassiniy Road, Wabasca AB T0G 2K0"],["Westlock Healthcare Centre","10220-93 Street, Westlock AB T7P 2G4"],["Whitecourt Healthcare Centre","20 Sunset Boulevard, Whitecourt AB T7S 1M8"],["Jack Ady Cancer Centre","960-19 Street S, Lethbridge AB T1J 1W5"],["Margery E. Yuill Cancer Centre","666-5 Street S.W., Medicine Hat AB T1A 4H6"],["Tom Baker Cancer Centre","1331-29 Street NW, Calgary AB T2N 4N2"],["Bow Valley Community Cancer Centre","1100 Hospital Place, Canmore AB T1W 1N2"],["High River Community Cancer Centre","560-9 Avenue West, High River AB T1V 1B3"],["Camrose Community Cancer Centre","4607-53 Street, Camrose AB T4V 1Y5"],["Drayton Valley Community Cancer Centre","4550 Madsen Avenue, Drayton Valley AB T7A 1N8"],["Drumheller Community Cancer Centre","351-9 Street NW, Drumheller AB T0J 0Y1"],["Central Alberta Cancer Centre","3942-50A Avenue, Red Deer AB T4N 4E7"],["Cross Cancer Institute","11560 University Avenue, Edmonton AB T6G 1Z2"],["Barrhead Community Cancer Centre","4815-51 Avenue, Barrhead AB T7N 1M1"],["Bonnyville Community Cancer Centre","5001 Lakeshore Drive, Bonnyville AB T9N 2J7"],["Fort McMurray Community Cancer Centre","7 Hospital Street, Fort McMurray AB T9H 1P2"],["Hinton Community Cancer Centre","1280 Switzer Drive, Hinton AB T7V 1V2"],["Peace River Community Cancer Centre","10101-68 Street, Peace River AB T8S 1T6"],["Magrath Health Centre","37 2nd Avenue N., Magrath AB T0K 1J0"],["Piyami Health Centre","301A Rogers Avenue South, Picture Butte AB T0K 1V0"],["Airdrie Community Health Centre","604 Main Street South, Airdrie AB T4B 3K7"],["East Calgary Family Care Clinic","4715-8 Avenue SE, Calgary AB T2A 3N4"],["Sheldon M. Chumir Health Centre","1213-4 Street SW, Calgary AB T2R 0X7"],["South Calgary Health Centre","31 Sunpark Plaza SE, Calgary AB T2X 3W5"],["Sunridge Medical Gallery","2580-32nd Street NE, Calgary AB T1Y 7M8"],["Cochrane Community Health Centre","60 Grande Blvd., Cochrane AB T4C 0S4"],["Okotoks Health and Wellness Centre","11 Cimarron Common, Okotoks AB T1S 2E9"],["Bashaw Care Centre","5308-53 Street, Bashaw AB T0B 0H0"],["Sylvan Lake Community Health Centre","4602-49 Avenue, Sylvan Lake AB T4S 1M7"],["East Edmonton Health Centre","7910-112 Ave. NW, Edmonton AB T5B 0C2"],["La Crete Health Centre","10601-100 Avenue, La Crete AB T0H 2H0"],["Rainbow Lake Health Centre","6A Commercial Road, Rainbow Lake AB T0H 2Y0"],["Slave Lake Family Care Clinic","231-3 Avenue NE, Slave Lake AB T0G 2A2"]];
+/* Red Deer family doctor clinics & their doctors (source: Red Deer PCN "Find a Primary Care Provider", reddeerpcn.com, Nov 2026) */
+const RD_CLIN=[["Apollo Health Centre","101-5001 Aspen Lakes Blvd, Blackfalds AB T4M 0P1",["Dr. M. Kauchali","D. Michalevich (NP)","K. Clarke (NP)"]],["Aspire Family Medicine Clinic","Unit 120-2810 Bremner Avenue, Red Deer AB T4R 1M9",["Dr. C. Potgieter","Dr. C. Swartz","Dr. J. Unuafe"]],["Blackfalds Medical Clinic","5021 Parkwood Road, Blackfalds AB T0M 0J0",["Dr. O. Ikuomola","Dr. T. Kemp"]],["Cronquist Medical Clinic","1, 4324 54 Avenue, Red Deer AB T4N 4M2",["Dr. A. Phillpot","Dr. E. Thompson"]],["Delburne Medical Centre","2102 20 Street, Delburne AB T0M 0V0",["Dr. I. Del Papa","Dr. M. Kauchali"]],["Discovery Medical and Walk In Clinic","130, 3410 50 Avenue, Red Deer AB T4N 3Y4",["Dr. C. Claasen","Dr. C. Koen","Dr. F. Fordyce","Dr. F. Grimbeek","Dr. J. Uys","Dr. N. Basson","Dr. R. Greeff"]],["Dr. Martina Babin","165, 5201 43 Street, Red Deer AB T4N 1C7",["Dr. M. Babin"]],["Easthill Walk In and Medical Clinic","Suite 610, 3020 22 Street, Red Deer AB T4R 3J5",["Dr. E. Ehigiator","Dr. G. Ahmad","Dr. I. Ogunbi","Dr. J. Ehigiator","Dr. K. Mustafa","Dr. N. Imran","Dr. P. Swarts"]],["Ebenezar Medical & Walk In Clinic","4705 48 Avenue, Red Deer AB T4N 3T1",["Dr. C. Akwu-ude","Dr. D. Caleb","Dr. E. Egharevba","Dr. I. Agbeze","Dr. I. Akwu-Ude","Dr. N. Adesina","Dr. O. Ajayi","Dr. U. Nwokpor"]],["Highland Park Walk In & Medical Clinic","Suite 2B, 6315 Horn Street, Red Deer AB T4N 6H5",["Dr. B. Benson","Dr. D. Rautenbach","Dr. P. Bouch","Dr. T. Ford","Dr. W. Hildebrandt"]],["Horizon Family Medicine","110, 6845 66 Street, Red Deer AB T4P 3T5",["Dr. B. Greig","Dr. C. Duke","Dr. C. Munchinsky","Dr. C.M. Prinsloo","Dr. E. Devereaux","Dr. G. Engert","Dr. G. Louwrens","Dr. G. Seavilleklein","Dr. J. Julyan-Gudgeon","Dr. J. Mulder","Dr. K. Atchison","Dr. M. Choudhry","Dr. M. Hyde","Dr. M. Wilson","Dr. N. Cronje","Dr. R. Beever","Dr. R. Nechifor","Dr. S. Ngeth","Dr. T. Ehsan"]],["Moriah Medical Clinic","101, 518 Memorial Park Way, Red Deer County AB T4E 3B7",["Dr. E. Ohanjanians","Dr. M. Amba-Ambaiowei","Dr. O. Isuosuo","Dr. T. Amba-Ambaiowei"]],["Parkland Medical Clinic","#6 5030 47 Avenue, Red Deer AB T4N 3P7",["Dr. C. Holmes","Dr. N. Gbenoba-Okumiahor","Dr. O. Abire","Dr. O. Otite","Dr. T. Williams"]],["Pleasant Care Medical Clinic","5121 47 Street, Red Deer AB T4N 1R8",["T. Pleasants (NP)"]],["Saint Mary Family and Walk In Clinic","1101, 2827 30 Avenue, Red Deer AB T4R 2P7",["Dr. A. McKnight","Dr. B. Staples","Dr. C. Metcalfe","Dr. C. Prins","Dr. D. Stearn","Dr. E. Ohida","Dr. G. Begley","Dr. H. Khalefa","Dr. J. Hernberger","Dr. J. McConnell","Dr. J. McIntyre","Dr. J. Rossouw","Dr. J. Viljoen","Dr. K. Daniel","Dr. K. Hermanutz","Dr. L. Canu","Dr. S. Abugassa","Dr. S. Hovan","Dr. S. Konynenbelt","Dr. S. Tehsin","Dr. W. Qiang"]],["Springs Family & Walk In Clinic","101 4309 52 Avenue, Red Deer AB T4N 6S4",["Dr. B. Kuye","Dr. J. Ojadi","Dr. J. Uzokwe-Okechukwu"]],["Taton Medical and Walk in Clinic","8113, 20 Thomlinson Avenue, Red Deer AB",["Dr. A. Achi","Dr. A. Onungo","Dr. O. Horsfall"]],["Taylor North Medical & Walk In Clinic","160, 6900 Taylor Drive, Red Deer AB T4P 1K4",["Dr. C. Swartz","Dr. D. Jansen","Dr. J. Badenhorst","Dr. J. Bromley","Dr. M. Odendaal","Dr. Y. Sheopershad"]],["The Branch Medical Clinic","120, 7101 50 Avenue, Red Deer AB T4N 4E4",["Dr. E. Ogali","Dr. F. Oguejiofor","Dr. J. Omeh","Dr. O. Adeyemo","Dr. S. Eleason","Dr. T. Shittu"]],["Village Mall Walk In Clinic","22, 6320 50 Avenue, Red Deer AB T4N 6R1",["Dr. A. Kotze","Dr. F. Botha","Dr. L. Jones","Dr. S. Kruger","Dr. W. Grabe"]],["Viva Medical Clinic","4406 50 Ave, Red Deer AB T4N 3Z6",["Dr. R. Perveen"]],["Westpark Medical and Walk in Clinic","111, 3722 57 Avenue, Red Deer AB T4N 4R7",["Dr. F. Afulukwe","Dr. J. Afulukwe","Dr. S. Ojiako","Dr. V. Mazamisa"]],["Red Deer Primary Care Network (PCN)","5120 47 Street, Red Deer AB T4N 1R9",[]]];
+const taNorm=x=>String(x||"").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9]+/g," ").trim();
+let TA_ALL=null;
+function taAll(){ if(TA_ALL) return TA_ALL; TA_ALL=[];
+  RD_CLIN.forEach(c=>{ TA_ALL.push({n:c[0],a:c[1],em:"🩺",rd:1,docs:c[2].join(" ")});
+    c[2].forEach(d=>{ const dn=d.replace(" (NP)",""); TA_ALL.push({n:dn,a:c[1],sub:c[0],fill:dn+(/\(NP\)/.test(d)?", NP":"")+" ("+c[0]+")",em:"👤",rd:1,doc:1}); }); });
+  AB_FAC.forEach(f=>{ if(!TA_ALL.some(x=>taNorm(x.n)===taNorm(f[0]))) TA_ALL.push({n:f[0],a:f[1],em:"🏥",rd:/red deer/i.test(f[1])?1:0}); });
+  return TA_ALL; }
+function taMatches(q){ const qn=taNorm(q).replace(/^dr /,""), words=qn.split(" ").filter(Boolean);
+  const mine=(data.settings.clinics||[]).map(c=>({n:c.name,a:c.address,km:c.km,em:"⭐",mine:1}));
+  if(!qn) return mine.slice(-6).reverse();
+  if(qn.length<2) return [];
+  const all=mine.concat(taAll().filter(x=>!mine.some(m=>taNorm(m.n)===taNorm(x.fill||x.n))));
+  const sc=x=>{ const nm=taNorm(x.n).replace(/^dr /,""), hay=(x.doc?nm:nm+" "+taNorm(x.a)).split(" ");
+    if(!words.every(w=>hay.some(h=>h.startsWith(w)))) return -1;
+    const nw=nm.split(" "); return (nm.startsWith(qn)?3:0)+(words.every(w=>nw.some(h=>h.startsWith(w)))?3:0)+(x.mine?5:0)+(x.rd?1:0)+(x.doc?0:0.5); };
+  return all.map(x=>[sc(x),x]).filter(y=>y[0]>=0).sort((a,b)=>b[0]-a[0]).slice(0,6).map(y=>y[1]); }
+function taShow(inp){ const ids=inp.id==="nName"?["nAddr","nKm"]:["cAddr","cKm"]; let box=inp.nextElementSibling;
+  if(!box||!box.classList.contains("ta")){ box=document.createElement("div"); box.className="ta"; inp.after(box); }
+  const m=taMatches(inp.value); if(!m.length){ box.remove(); return; }
+  box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("");
+  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
+    inp.value=f.fill||f.n; const a=$("#"+ids[0]); if(a){ a.value=f.a; a.classList.remove("need"); } const k=$("#"+ids[1]); if(k) k.value=f.km||"";
+    inp.classList.remove("need"); box.remove(); if(k&&!k.value) k.focus(); else inp.blur(); toast("✅ Filled in"); }));
+}
+document.addEventListener("input",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")){ const a=$(t.id==="nName"?"#nAddr":"#cAddr"); if(a) a.value=""; taShow(t); } });
+document.addEventListener("focusin",e=>{ const t=e.target; if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
+document.addEventListener("focusout",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) setTimeout(()=>{ const b=t.nextElementSibling; if(b&&b.classList.contains("ta")&&document.activeElement!==t) b.remove(); },250); });
+function suggestInput(el,title,getItems,onPick,newLabel){
+  if(!el) return;
+  el.addEventListener("pointerdown",e=>{
+    const items=getItems(); if(!items.length) return; // nothing saved yet: type normally
+    e.preventDefault();
+    openSuggestPop(title,items,it=>{ onPick?onPick(it):(el.value=it.value); el.dispatchEvent(new Event("input",{bubbles:true})); },
+      ()=>{ el.focus(); try{ el.select(); }catch(_){} }, newLabel||"✏️ Type something new", el.value);
+  });
+}
+function respiteTimeItems(field){
+  const vs=[...data.visits].filter(v=>v.start&&v.end).sort(byNewest);
+  return uniqRecent(vs,v=>field==="start"?v.start+"|"+v.end:v.end).map(v=> field==="start"
+    ? {label:time12(v.start), sub:`until ${time12(v.end)} · ${fmtH(hoursOf(v))} h`, value:v.start, end:v.end, em:"▶️"}
+    : {label:time12(v.end), sub:`started ${time12(v.start)}`, value:v.end, em:"⏹️"});
+}
+
+/* ---------- sheets ---------- */
+function addApptSheet(editId){
+  const cl=data.settings.clinics;
+  const ex=editId?data.appts.find(a=>a.id===editId):null;
+  openSheet(`
+    <h2>🏥 ${ex?"Change appointment":"New appointment"}</h2>
+    <div class="lab"><span class="em">🩺</span>Doctor or hospital</div><input id="nName" maxlength="70" autocomplete="off" placeholder="Start typing, e.g. Red Deer" value="${esc(ex?ex.name:"")}">
+    <input id="nAddr" type="hidden" value="${esc(ex?ex.address||"":"")}">
+    <div class="lab"><span class="em">🚗</span>Km there and back (from home)</div><input id="nKm" inputmode="decimal" maxlength="6" placeholder="14" value="${esc(ex?ex.km||"":"")}">
+    <div class="lab"><span class="em">📅</span>Day</div>${dtBoxHTML("aDate","date",ex?ex.date:"","Tap to pick the day")}
+    <div class="lab"><span class="em">🕒</span>Time</div>${dtBoxHTML("aTime","time",ex?ex.time:"","Tap to pick the time")}
+    <div class="lab"><span class="em">🅿️</span>Parking $ (if any)</div><div class="withcam"><input id="aPark" inputmode="decimal" placeholder="0" maxlength="6" value="${esc(ex?ex.parking||"":"")}">${camBtn("parking")}</div>
+    <div class="pwarn" id="aParkW" style="display:none"></div>
+    <button class="chip svc ${ex&&ex.long?"on":""}" id="aLong" style="margin-top:16px;width:100%"><span class="tick">${ex&&ex.long?"✓":""}</span><span style="flex:1">⏱️ Trip 8 hours or more?<small>Then meals and hotel are paid too</small></span></button>
+    <div id="aLongBox" style="display:${ex&&ex.long?"block":"none"}">
+      <div class="row2">
+        <div><div class="lab"><span class="em">🍽️</span>Meals $</div><div class="withcam"><input id="aMeals" inputmode="decimal" placeholder="0" maxlength="7" value="${esc(ex?ex.meals||"":"")}">${camBtn("meals")}</div></div>
+        <div><div class="lab"><span class="em">🛏️</span>Hotel $</div><div class="withcam"><input id="aHotel" inputmode="decimal" placeholder="0" maxlength="7" value="${esc(ex?ex.hotel||"":"")}">${camBtn("hotel")}</div></div>
+      </div>
+      <div class="hint" style="margin-top:8px">🍽️ Meals: 1 adult + 1 child. Not the child's meals in hospital.</div>
+      <button class="chip svc ${ex&&ex.hotelReceipt?"on":""}" id="aRcpt" style="margin-top:12px;width:100%;display:${ex&&+ex.hotel>0?"flex":"none"}"><span class="tick">${ex&&ex.hotelReceipt?"✓":""}</span><span style="flex:1">🧾 I have the hotel receipt<small>FSCD needs it for the hotel</small></span></button>
+    </div>
+    <div class="pbox" style="display:none"></div>
+    <div class="hint" style="margin-top:8px">📷 Tap the camera to add a receipt photo</div>
+    <button class="big doc" id="saveAppt"><span class="em">✅</span>${ex?"Save changes":"Save"}</button>
+    ${ex?`<button class="big ghost" id="delAppt" style="color:var(--red)"><span class="em">🗑️</span>Delete appointment</button>`:""}
+    <button class="big ghost" data-close>Cancel</button>`);
+  const ts={date:ex?ex.date:"",time:ex?ex.time:""};
+  bindDT("aDate","date",ts,"date",{title:"Day of the appointment",ph:"Tap to pick the day"});
+  const apptItems=(field)=>{ const nm=($("#nName").value||"").trim(); const c=nm?{name:nm}:null;
+    const all=[...data.appts].filter(a=>field==="time"?a.time:String(a.parking||"").trim()).sort(byNewest);
+    const mine=c?all.filter(a=>a.name===c.name):[]; const rest=all.filter(a=>!mine.includes(a));
+    return uniqRecent(mine.concat(rest),a=>field==="time"?a.time:String(+a.parking)).map(a=> field==="time"
+      ? {label:time12(a.time), sub:a.name, value:a.time, em:"🕒"} : {label:money(+a.parking), sub:a.name, value:String(+a.parking), em:"🅿️"}); };
+  bindDT("aTime","time",ts,"time",{title:"Appointment time",ph:"Tap to pick the time",suggest:()=>apptItems("time")});
+  suggestInput($("#aPark"),"🅿️ Parking",()=>apptItems("parking"));
+  parkHint($("#aPark"),$("#aParkW"),()=>ts.date,ex?"a:"+ex.id:"");
+  const tog=(b,on)=>{ b.classList.toggle("on",on); b.querySelector(".tick").textContent=on?"✓":""; };
+  $("#aLong").onclick=e=>{ e.stopPropagation(); const on=!$("#aLong").classList.contains("on"); tog($("#aLong"),on); $("#aLongBox").style.display=on?"block":"none"; };
+  $("#aRcpt").onclick=e=>{ e.stopPropagation(); tog($("#aRcpt"),!$("#aRcpt").classList.contains("on")); };
+  $("#aHotel").addEventListener("input",()=>{ $("#aRcpt").style.display=(+$("#aHotel").value>0)?"flex":"none"; });
+  const photos=photoCtl([...((ex&&ex.photos)||[])],k=>{ if(k==="hotel") tog($("#aRcpt"),true); });
+  if(ex) $("#delAppt").onclick=e=>{ e.stopPropagation(); confirmSheet("🗑️ Delete this appointment?",()=>{ data.appts=data.appts.filter(a=>a.id!==ex.id); save(); }); };
+  $("#saveAppt").onclick=e=>{
+    e.stopPropagation();
+    const n=$("#nName").value.trim(), a=$("#nAddr").value.trim(), k=$("#nKm").value.trim();
+    if(!n) return need("#nName","🩺 Type the doctor or hospital");
+    const date=ts.date, time=ts.time;
+    if(!date) return need("#aDate","📅 Pick a day"); if(!time) return need("#aTime","🕒 Pick the time");
+    let c=cl.find(x=>taNorm(x.name)===taNorm(n));
+    if(c){ if(k) c.km=k; if(a) c.address=a; } else { c={id:uid(),name:n,address:a,km:k}; data.settings.clinics.push(c); }
+    const rec={id:ex?ex.id:uid(),date,time,name:n,address:a||c.address||"",km:k||c.km||"",parking:($("#aPark").value||"").trim()};
+    if($("#aLong").classList.contains("on")){ rec.long=true; rec.meals=($("#aMeals").value||"").trim(); rec.hotel=($("#aHotel").value||"").trim(); rec.hotelReceipt=+rec.hotel>0&&($("#aRcpt").classList.contains("on")||photos.some(p=>p.kind==="hotel")); }
+    if(photos.length) rec.photos=photos.slice();
+    if(ex) data.appts=data.appts.map(a=>a.id===ex.id?rec:a); else data.appts.push(rec);
+    save(); month=date.slice(0,7); closeSheet(); render(); toast(rcptMissing(rec)?"🧾 Saved · keep the hotel receipt":(ex?"✅ Changed":"✅ Saved"));
+  };
+}
+function addVisitSheet(editId){
+  const ex=editId?data.visits.find(v=>v.id===editId):null;
+  const lastV=[...data.visits].sort(byNewest)[0];
+  const st=ex?{date:ex.date,start:ex.start||"",end:ex.end||"",service:svcOf(ex),overnightOK:!!(ex.start&&ex.end&&ex.end<=ex.start),_lastPair:(ex.start||"")+"|"+(ex.end||"")}
+            :{date: month===todayISO().slice(0,7)?todayISO():"", start:"", end:"", service: (lastV&&svcList().includes(svcOf(lastV)))?svcOf(lastV):svcList()[0]};
+  const svcChoices=svcList().includes(st.service)?svcList():svcList().concat([st.service]);
+  openSheet(`
+    <h2>🧑‍🤝‍🧑 ${ex?"Change visit":"New visit"}</h2>
+    <div class="lab"><span class="em">📅</span>Day</div>${dtBoxHTML("vDay","date",st.date,"Tap to pick the day")}
+    <div class="lab"><span class="em">❓</span>Type of service</div><div class="chips" id="vSvc">${svcChoices.map(sv=>`<button class="chip ${sv===st.service?"on":""}" data-vsvc="${esc(sv)}">${esc(sv)}</button>`).join("")}
+      <button class="chip" id="vMoreSvc" style="text-align:center;color:var(--blue);box-shadow:inset 0 0 0 2px var(--line);background:var(--card)">➕ Other type of service</button></div>
+    <div id="vDaysBox" style="display:${isDaysSvc(st.service)?"block":"none"}"><div class="lab"><span class="em">🌙</span>Number of days</div><input id="vDays" inputmode="decimal" value="${esc(ex&&ex.days?ex.days:"1")}" maxlength="4"></div>
+    <div id="vTimesBox" style="display:${isDaysSvc(st.service)?"none":"block"}">
+     <div class="row2"><div><div class="lab"><span class="em">▶️</span>Start</div>${dtBoxHTML("vStart","time",st.start,"Tap")}</div>
+        <div><div class="lab"><span class="em">⏹️</span>End</div>${dtBoxHTML("vEnd","time",st.end,"Tap")}</div></div>
+        <div class="sum" id="vSum"></div><div id="vWarn"></div></div>
+    <button class="big resp" id="saveVisit"><span class="em">✅</span>${ex?"Save changes":"Save"}</button>
+    ${ex?`<button class="big ghost" id="delVisit" style="color:var(--red)"><span class="em">🗑️</span>Delete visit</button>`:""}
+    <button class="big ghost" data-close>Cancel</button>`);
+  if(ex) $("#delVisit").onclick=e=>{ e.stopPropagation(); confirmSheet("🗑️ Delete this visit?",()=>{ data.visits=data.visits.filter(v=>v.id!==ex.id); save(); }); };
+  const mins=t=>{ const [h,m]=t.split(":").map(Number); return h*60+m; };
+  const sum=()=>{
+    const sm=$("#vSum"), wn=$("#vWarn"); if(!sm||!wn) return;
+    if(!(st.start&&st.end)){ sm.textContent=""; wn.innerHTML=""; return; }
+    const crosses=mins(st.end)<=mins(st.start);
+    if(st._lastPair!==st.start+"|"+st.end){ st.overnightOK=false; st._lastPair=st.start+"|"+st.end; }
+    if(!crosses){ sm.textContent=`🕒 ${fmtH(hoursOf(st))} hours`; wn.innerHTML=""; return; }
+    // end is earlier than start: either an overnight visit or an AM/PM slip
+    const [eh,em]=st.end.split(":").map(Number);
+    const flip=`${pad((eh+12)%24)}:${pad(em)}`; const flipOK=mins(flip)>mins(st.start);
+    if(st.overnightOK){ sm.textContent=`🌙 ${fmtH(hoursOf(st))} hours · overnight`; wn.innerHTML=""; return; }
+    sm.textContent="";
+    wn.innerHTML=`<div class="warn" style="margin-top:12px"><b style="display:block;font-size:17px;margin-bottom:4px">⚠️ End is before start</b>${esc(time12(st.start))} to ${esc(time12(st.end))} means the visit went past midnight (${fmtH(hoursOf(st))} hours).</div>
+      ${flipOK?`<button class="big trip" id="vFix" style="margin-top:0">✏️ Change end to ${esc(time12(flip))} · ${fmtH(hoursOf({start:st.start,end:flip}))} h</button>`:""}
+      <button class="big ghost" id="vOvernight">🌙 Yes, it was overnight</button>`;
+    if($("#vFix")) $("#vFix").onclick=e=>{ e.stopPropagation(); st.end=flip; $("#vEnd").outerHTML=dtBoxHTML("vEnd","time",st.end,"Tap"); bindAll(); sum(); toast("✅ End time fixed"); };
+    $("#vOvernight").onclick=e=>{ e.stopPropagation(); st.overnightOK=true; sum(); };
+  };
+  const bindAll=()=>{ bindDT("vDay","date",st,"date",{title:"Day of the visit",ph:"Tap to pick the day"},sum);
+    {
+      bindDT("vStart","time",st,"start",{title:"Start time",ph:"Tap",suggest:()=>respiteTimeItems("start"),
+        onSuggest:it=>{ if(!st.end&&it.end){ st.end=it.end; const eb=$("#vEnd"); if(eb){ eb.outerHTML=dtBoxHTML("vEnd","time",st.end,"Tap"); bindDT("vEnd","time",st,"end",{title:"End time",ph:"Tap",suggest:()=>respiteTimeItems("end")},sum); } } }},sum);
+      bindDT("vEnd","time",st,"end",{title:"End time",ph:"Tap",suggest:()=>respiteTimeItems("end")},sum); } };
+  bindAll(); sum();
+  if($("#vMoreSvc")) $("#vMoreSvc").addEventListener("click",e=>{ e.stopPropagation(); closeSheet(); go("setup"); setTimeout(()=>{ const el=document.querySelector("[data-svc]"); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); },150); toast("Tick the other services, then add the visit"); });
+  if($("#vSvc")) $("#vSvc").querySelectorAll("[data-vsvc]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); st.service=b.dataset.vsvc;
+    $("#vSvc").querySelectorAll("[data-vsvc]").forEach(x=>x.classList.toggle("on",x===b));
+    $("#vDaysBox").style.display=isDaysSvc(st.service)?"block":"none"; $("#vTimesBox").style.display=isDaysSvc(st.service)?"none":"block"; }));
+  $("#saveVisit").onclick=e=>{
+    e.stopPropagation();
+    if(!st.date) return need("#vDay","📅 Pick a day");
+    const v={id:ex?ex.id:uid(),date:st.date,service:st.service};
+    if(isDaysSvc(st.service)){ v.days=$("#vDays").value||"1"; } else { if(!st.start) return need("#vStart","▶️ Pick the start time"); if(!st.end) return need("#vEnd","⏹️ Pick the end time"); if(mins(st.end)<=mins(st.start) && !st.overnightOK){ toast("⚠️ Check the end time"); sum(); const w=$("#vWarn"); if(w) w.scrollIntoView({behavior:"smooth",block:"center"}); return; } v.start=st.start; v.end=st.end; }
+    if(ex) data.visits=data.visits.map(x=>x.id===ex.id?v:x); else data.visits.push(v);
+    save(); month=st.date.slice(0,7); closeSheet(); render(); toast(ex?"✅ Changed":"✅ Saved");
+  };
+}
+function confirmSheet(msg, onYes){
+  openSheet(`<h2>${msg}</h2><button class="big red" id="yes"><span class="em">🗑️</span>Delete</button><button class="big ghost" data-close>Keep</button>`);
+  $("#yes").onclick=()=>{ onYes(); closeSheet(); render(); };
+}
+
+/* ---------- form limits (rows on the official forms) ---------- */
+const LIMIT={doc:6,resp:30,trip:19};
+
+/* ---------- yearly limits ---------- */
+// the agreement year runs 12 months from the start date (or Jan 1 if no date is set)
+function agreementYear(){
+  const st=data.settings, t=parseISO(todayISO());
+  let s0;
+  if(st.agreementStart){ const a=parseISO(st.agreementStart); s0=new Date(t.getFullYear(),a.getMonth(),a.getDate()); if(s0>t) s0=new Date(t.getFullYear()-1,a.getMonth(),a.getDate()); }
+  else s0=new Date(t.getFullYear(),0,1);
+  const e0=new Date(s0.getFullYear()+1,s0.getMonth(),s0.getDate()); e0.setDate(e0.getDate()-1);
+  const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  return {from:iso(s0),to:iso(e0),label:`${MON3[s0.getMonth()]} ${s0.getDate()}, ${s0.getFullYear()} – ${MON3[e0.getMonth()]} ${e0.getDate()}, ${e0.getFullYear()}`};
+}
+function limitCard(kind){
+  const st=data.settings, Y=agreementYear(), inY=x=>x.date>=Y.from&&x.date<=Y.to;
+  let used, lim, unit;
+  if(kind==="resp"){ used=data.visits.filter(v=>inY(v)&&!isDaysSvc(svcOf(v))&&/Respite/.test(svcOf(v))).reduce((a,v)=>a+hoursOf(v),0); lim=parseFloat(st.limResp??"240")||0; unit="hours"; }
+  else { used=data.appts.filter(inY).length; lim=parseFloat(st.limDoc??"36")||0; unit="appointments"; }
+  if(!lim) return "";
+  const left=lim-used, pct=Math.min(100,Math.round(used/lim*100)), over=left<0, near=!over&&pct>=80;
+  const col=over?"var(--red)":near?"#d97706":"var(--doc)";
+  return `<div class="fcard" style="display:block">
+      <div class="frow"><span>📊 This agreement year</span><b style="color:${over?"var(--red)":"var(--ink)"}">${fmtH(used)} of ${fmtH(lim)} ${unit}</b></div>
+      <div class="bar" style="margin:8px 0 6px"><i style="width:${pct}%;background:${col}"></i></div>
+      <div class="hint">${over?`<b style="color:var(--red)">⚠️ ${fmtH(-left)} ${unit} over the limit. Talk to your FSCD worker.</b>`:near?`<b style="color:#b45309">Only ${fmtH(left)} ${unit} left this year.</b>`:`${fmtH(left)} ${unit} left`} · ${esc(Y.label)}</div>
+    </div>`;
+}
+
+/* ---------- progress card + live preview ---------- */
+const FORM_STEPS={doc:"🖨️ ➜ 🏥 ➜ ✍️",resp:"🖨️ ➜ ✍️ ➜ 📷",trip:"🖨️ ➜ 🗂️",triple:"🖨️ ➜ ✍️ ➜ 📷 ➜ 📧"};
+const FORM_HINT={doc:"Print · bring it to the visit · the doctor or hospital signs",resp:"Print · you and the worker sign · take a photo",trip:"Print · keep it with your parking receipts",triple:"Print · sign · take a photo · email it to Triple P"};
+function infoFields(kind){
+  const st=data.settings, w=st.worker||{};
+  const F={
+    doc:[["Child's name",st.childName],["Child ID",st.childId]],
+    resp:[["Child's name",st.childName],["Child ID",st.childId],["Your name",st.parentName],["Worker name",w.name],["Worker address",w.address],["Worker postal code",w.postal],["Worker phone",w.phone],...svcList().map(sv=>[svcList().length>1?`Wage (${SVC_SHORT[sv]||sv})`:"Wage",(st.wages||{})[sv]])],
+    trip:[["Child's name",st.childName],["Home address",st.home],["Km rate",st.rate]]
+  }[kind];
+  return {total:F.length, filled:F.filter(f=>String(f[1]||"").trim()).length, missing:F.filter(f=>!String(f[1]||"").trim()).map(f=>f[0])};
+}
+function formCard(kind,count){
+  const n=LIMIT[kind], sheets=Math.max(1,Math.ceil(count/n)), cur=count===0?1:Math.ceil(count/n), used=count===0?0:(count-(cur-1)*n);
+  const inf=infoFields(kind);
+  return `<div class="fcard">
+      <button class="fthumb" data-preview="${kind}" aria-label="See the form"><span class="ph">📄</span><span class="zoom">🔍</span></button>
+      <div class="fside">
+        <div class="frow"><span>📝 Details</span><b>${inf.filled}/${inf.total}</b></div>
+        <div class="bar okb"><i style="width:${Math.round(inf.filled/inf.total*100)}%"></i></div>
+        <div class="frow"><span>📄 Rows used${sheets>1?` · form ${cur}/${sheets}`:""}</span><b>${used}/${n}</b></div>
+        <div class="bar lines"><i style="width:${Math.round(used/n*100)}%"></i></div>
+        ${used===n?`<div class="fdone">Form full · next one starts a new form</div>`:""}
+      </div>
+    </div>
+    ${inf.missing.length?`<button class="miss" data-act="fix-missing"><span style="font-size:22px">⚠️</span><span>Missing: ${inf.missing.map(esc).join(", ")}<br><span style="font-weight:500">Tap to fill in</span></span></button>`:""}`;
+}
+let thumbTimer=null; const thumbCache={};
+function thumbPage(kind){ if(kind!=="triple") return 0; const P2=["second","secondRel","secondPhone","secondEmail","language","langHelp","reason","how","more","address"]; const st2=wizSteps(); const cur=st2[Math.min(wiz,st2.length-1)]; return (wiz<st2.length && cur && P2.includes(cur.k))?2:1; }
+const thumbKeyOf=kind=>kind+"|"+month+"|"+thumbPage(kind)+"|"+JSON.stringify(kind==="triple"?data.triple:[data.settings,data.appts,data.visits,data.trips]);
+function putThumb(box,c){ box.innerHTML=""; box.appendChild(c); const z=document.createElement("span"); z.className="zoom"; z.textContent="🔍"; box.appendChild(z); }
+function scheduleThumb(kind){
+  clearTimeout(thumbTimer);
+  // nothing changed since the last picture: show it right away, no rebuilding
+  const box=document.querySelector(`.fthumb[data-preview="${kind}"]`), hit=thumbCache[kind];
+  if(box&&hit){ putThumb(box,hit.canvas); if(hit.key===thumbKeyOf(kind)) return; }
+  thumbTimer=setTimeout(()=>drawThumb(kind),hit?400:150);
+}
+async function drawThumb(kind){
+  if(!document.querySelector(`.fthumb[data-preview="${kind}"]`)) return;
+  const key=thumbKeyOf(kind), want=thumbPage(kind);
+  try{
+    const lib=await loadPdfJs();
+    const bytes=await buildPDF(kind);
+    const pdf=await lib.getDocument({data:bytes}).promise;
+    const pn=want||pdf.numPages; // the form being filled now
+    const page=await pdf.getPage(Math.min(pn,pdf.numPages));
+    const v1=page.getViewport({scale:1}); const scale=(216/v1.width);
+    const vp=page.getViewport({scale});
+    const c=document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+    await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+    try{ pdf.destroy(); }catch(_){}
+    thumbCache[kind]={key,canvas:c};
+    const box2=document.querySelector(`.fthumb[data-preview="${kind}"]`); if(!box2) return;
+    putThumb(box2,c);
+  }catch(e){ /* offline: keep the placeholder */ }
+}
+async function previewForm(kind){
+  if(kind!=="triple" && (!data.settings.childName)){ /* still show, blanks are useful */ }
+  openSheet(`<div class="ready"><span class="em">⏳</span>Making preview…</div>`);
+  try{
+    const bytes=await buildPDF(kind);
+    const [y,m]=month.split("-");
+    const name = kind==="triple" ? "Triple P Referral.pdf" : ({doc:"Medical Appointments",resp:"Respite Record",trip:"Mileage Log"}[kind])+` ${MONTHS[+m-1]} ${y}.pdf`;
+    ready={bytes,name,kind,summary:summaryText(kind),steps:FORM_STEPS[kind],hint:FORM_HINT[kind]};
+    openReady();
+  }catch(e){ openSheet(`<div class="warn">📶 Couldn't load. Check the internet connection and try again.</div><button class="big ghost" data-close>Close</button>`); }
+}
+
+/* ---------- receipt photos (kept in IndexedDB on the phone; too big for the backup code) ---------- */
+const PDB="fscd-tracker-photos";
+function pdb(){ return pdb.p||(pdb.p=new Promise((res,rej)=>{ const r=indexedDB.open(PDB,1); r.onupgradeneeded=()=>r.result.createObjectStore("p"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
+async function pPut(id,blob){ const db=await pdb(); return new Promise((res,rej)=>{ const tx=db.transaction("p","readwrite"); tx.objectStore("p").put(blob,id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+async function pGet(id){ try{ const db=await pdb(); return await new Promise(res=>{ const r=db.transaction("p").objectStore("p").get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function pKeys(){ const db=await pdb(); return new Promise(res=>{ const r=db.transaction("p").objectStore("p").getAllKeys(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); }); }
+async function pDel(id){ const db=await pdb(); return new Promise(res=>{ const tx=db.transaction("p","readwrite"); tx.objectStore("p").delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>res(); }); }
+async function photoGC(){ try{ const used=new Set(data.appts.concat(data.trips).flatMap(r=>(r.photos||[]).map(p=>p.id))); for(const k of await pKeys()) if(!used.has(k)) await pDel(k); }catch(e){} }
+function shrink(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), im=new Image();
+  im.onload=()=>{ const M=1600, k=Math.min(1,M/Math.max(im.naturalWidth,im.naturalHeight)); const c=document.createElement("canvas"); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k); c.getContext("2d").drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url); c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/jpeg",0.72); };
+  im.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); }; im.src=url; }); }
+const PKIND={parking:["🅿️","Parking"],meals:["🍽️","Meals"],hotel:["🛏️","Hotel"]};
+const camBtn=k=>`<button class="cam" data-cam="${k}" aria-label="Photo of the ${PKIND[k][1].toLowerCase()} receipt">📷<span class="cn"></span></button>`;
+const photoCount=list=>list.reduce((n,r)=>n+((r.photos||[]).length),0);
+function photoCtl(photos,onAdd){
+  const sh=$("#sheet"), box=sh.querySelector(".pbox");
+  const picker=document.createElement("input"); picker.type="file"; picker.accept="image/*"; picker.style.display="none"; sh.appendChild(picker);
+  let kind="parking"; const urls=[];
+  const draw=async()=>{
+    sh.querySelectorAll("[data-cam]").forEach(b=>{ const n=photos.filter(p=>p.kind===b.dataset.cam).length; b.querySelector(".cn").textContent=n?String(n):""; b.classList.toggle("has",n>0); });
+    if(!box) return; urls.splice(0).forEach(u=>URL.revokeObjectURL(u)); box.innerHTML=""; box.style.display=photos.length?"flex":"none";
+    for(const p of photos.slice()){ const blob=await pGet(p.id); const d=document.createElement("div"); d.className="pth";
+      d.innerHTML=`${blob?`<img alt="Receipt photo">`:`<span class="gone">?</span>`}<span class="pk">${PKIND[p.kind][0]}</span><button class="px" aria-label="Remove photo">✕</button>`;
+      if(blob){ const u=URL.createObjectURL(blob), im=d.querySelector("img"); urls.push(u); im.src=u; im.onclick=e=>{ e.stopPropagation(); showPhoto(u,p.kind); }; }
+      d.querySelector(".px").onclick=e=>{ e.stopPropagation(); const i=photos.indexOf(p); if(i>=0) photos.splice(i,1); draw(); };
+      box.appendChild(d); } };
+  sh.querySelectorAll("[data-cam]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); kind=b.dataset.cam; picker.value=""; picker.click(); }));
+  picker.onchange=async()=>{ const f=picker.files&&picker.files[0]; if(!f) return;
+    try{ toast("📷 Adding…"); const blob=await shrink(f); const id="p"+uid(); await pPut(id,blob); photos.push({id,kind}); await draw(); if(onAdd) onAdd(kind); toast("✅ Photo added"); }
+    catch(err){ toast("Couldn't add the photo"); } };
+  draw(); return photos;
+}
+function showPhoto(url,kind){ const P=$("#pop"); P.innerHTML=`<h2>${PKIND[kind][0]} ${PKIND[kind][1]}</h2><img src="${url}" alt="Receipt photo" style="width:100%;border-radius:14px;display:block"><button class="big ghost" id="pClose" style="margin-top:12px">Close</button>`; $("#popBg").classList.add("on"); $("#pClose").onclick=e=>{ e.stopPropagation(); closePop(); }; }
+async function savePhotos(list){
+  const files=[]; for(const r of list) for(const p of (r.photos||[])){ const b=await pGet(p.id); if(b) files.push(new File([b],`${r.date} ${PKIND[p.kind][1]} receipt ${files.length+1}.jpg`,{type:"image/jpeg"})); }
+  if(!files.length) return toast("No photos found");
+  if(navigator.canShare&&navigator.canShare({files})){ try{ await navigator.share({files}); }catch(e){} }
+  else files.forEach(f=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); });
+}
+setTimeout(photoGC,4000);
+
+/* ---------- trips ---------- */
+const PARK_CAP=10;
+function parkClaim(list){ const d={}; list.forEach(t=>{ d[t.date]=(d[t.date]||0)+(+t.parking||0); }); return Object.values(d).reduce((a,v)=>a+Math.min(v,PARK_CAP),0); }
+function dayParkOther(date,skipKey){ return data.appts.map(a=>({k:"a:"+a.id,date:a.date,p:+a.parking||0})).concat(data.trips.map(t=>({k:"t:"+t.id,date:t.date,p:+t.parking||0}))).filter(x=>x.date===date&&x.k!==skipKey).reduce((s,x)=>s+x.p,0); }
+function parkHint(inp,box,getDate,skipKey){ if(!inp||!box) return;
+  const f=()=>{ const v=+inp.value||0, d=getDate(), other=d?dayParkOther(d,skipKey):0;
+    if(v>0&&v+other>PARK_CAP){ box.style.display="block"; box.innerHTML=`⚠️ FSCD pays up to $10 a day.<br>${money(Math.max(0,PARK_CAP-other))} of this will be paid.`; } else box.style.display="none"; };
+  ["input","change","blur"].forEach(ev=>inp.addEventListener(ev,f)); f(); return f; }
+function apptExtras(list){ const L=list.filter(a=>a.long); return {meals:L.reduce((s,a)=>s+(+a.meals||0),0), hotel:L.reduce((s,a)=>s+(+a.hotel||0),0), missing:L.filter(rcptMissing).length}; }
+const rcptMissing=a=>!!(a.long&&+a.hotel>0&&!a.hotelReceipt&&!(a.photos||[]).some(p=>p.kind==="hotel"));
+function tripsInMonth(){
+  const st=data.settings;
+  const auto=inMonth(data.appts).map(a=>({key:"a:"+a.id,auto:true,date:a.date,time:a.time,purpose:"Medical appt (round trip)",from:st.home,to:a.address,toName:a.name,km:a.km,parking:a.parking,photos:a.photos}));
+  const man=inMonth(data.trips).map(t=>({key:"t:"+t.id,auto:false,date:t.date,time:"",purpose:t.purpose,from:t.from||st.home,to:t.to,toName:t.to,km:t.km,parking:t.parking,photos:t.photos}));
+  return auto.concat(man).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+}
+function editTripSheet(key){
+  const [kind,id]=key.split(":");
+  const rec = kind==="a" ? data.appts.find(a=>a.id===id) : data.trips.find(t=>t.id===id);
+  if(!rec) return;
+  openSheet(`
+    <h2>${kind==="a"?"🏥":"🚗"} ${esc(shortDate(rec.date))}</h2>
+    <div class="hint" style="font-size:17px;margin-bottom:6px">${esc(kind==="a"?rec.name:rec.to)}</div>
+    <div class="row2">
+      <div><div class="lab"><span class="em">🚗</span>Km</div><input id="eKm" inputmode="decimal" value="${esc(rec.km||"")}" maxlength="6"></div>
+      <div><div class="lab"><span class="em">🅿️</span>Parking $</div><div class="withcam"><input id="ePark" inputmode="decimal" value="${esc(rec.parking||"")}" placeholder="0" maxlength="6">${camBtn("parking")}</div></div>
+    </div>
+    <div class="pwarn" id="eParkW" style="display:none"></div>
+    <div class="pbox" style="display:none"></div>
+    <button class="big trip" id="saveEdit"><span class="em">✅</span>Save</button>
+    ${kind==="t"?`<button class="big ghost" id="delTrip"><span class="em">🗑️</span>Delete trip</button>`:`<div class="hint" style="text-align:center;margin-top:10px">To remove it, delete the doctor visit.</div>`}
+    <button class="big ghost" data-close>Cancel</button>`);
+  suggestInput($("#ePark"),"🅿️ Parking",()=>uniqRecent([...data.appts,...data.trips].filter(x=>String(x.parking||"").trim()).sort(byNewest),x=>String(+x.parking)).map(x=>({label:money(+x.parking),sub:x.name||x.to,value:String(+x.parking),em:"🅿️"})));
+  parkHint($("#ePark"),$("#eParkW"),()=>rec.date,key);
+  const photos=photoCtl([...(rec.photos||[])]);
+  $("#saveEdit").onclick=()=>{ rec.km=$("#eKm").value.trim(); rec.parking=$("#ePark").value.trim(); if(photos.length) rec.photos=photos.slice(); else delete rec.photos; save(); closeSheet(); render(); if(+rec.parking>10) toast("🅿️ FSCD pays up to $10 a day"); else toast("✅ Saved"); };
+  if(kind==="t") $("#delTrip").onclick=e=>{ e.stopPropagation(); confirmSheet("🗑️ Delete this trip?",()=>{ data.trips=data.trips.filter(t=>t.id!==id); save(); }); };
+}
+function addTripSheet(){
+  const defDate = month===todayISO().slice(0,7) ? todayISO() : month+"-01";
+  const cl=data.settings.clinics;
+  let purpose="Medical appt (round trip)";
+  openSheet(`
+    <h2>🚗 Other trip</h2>
+    <div class="lab"><span class="em">📅</span>Day</div>${dtBoxHTML("tDate","date","","Tap to pick the day")}
+    <div class="lab"><span class="em">❓</span>Why?</div>
+    <div class="chips" id="tWhy">
+      <button class="chip on" data-why="Medical appt (round trip)">🏥 Medical appointment</button>
+      <button class="chip" data-why="Hospital stay (round trip)">🛏️ Hospital stay</button>
+      <button class="chip" data-why="other">✏️ Something else</button>
+    </div>
+    <input id="tWhyOther" placeholder="Type the reason" style="display:none;margin-top:10px" maxlength="60">
+    <div class="lab"><span class="em">📍</span>Where to?</div>
+    <input id="tTo" placeholder="Tap to type the address" maxlength="100">
+    <div class="row2">
+      <div><div class="lab"><span class="em">🚗</span>Km</div><input id="tKm" inputmode="decimal" maxlength="6"></div>
+      <div><div class="lab"><span class="em">🅿️</span>Parking $</div><div class="withcam"><input id="tPark" inputmode="decimal" placeholder="0" maxlength="6">${camBtn("parking")}</div></div>
+    </div>
+    <div class="pwarn" id="tParkW" style="display:none"></div>
+    <div class="pbox" style="display:none"></div>
+    <button class="big trip" id="saveTrip"><span class="em">✅</span>Save</button>
+    <button class="big ghost" data-close>Cancel</button>`);
+  const tst={date:""}; bindDT("tDate","date",tst,"date",{title:"Day of the trip",ph:"Tap to pick the day"});
+  $("#tWhy").querySelectorAll("[data-why]").forEach(b=>b.onclick=()=>{ purpose=b.dataset.why; $("#tWhy").querySelectorAll("[data-why]").forEach(x=>x.classList.toggle("on",x===b)); $("#tWhyOther").style.display=purpose==="other"?"block":"none"; });
+  suggestInput($("#tTo"),"📍 Where to?",()=>{
+      const prev=uniqRecent([...data.trips].sort(byNewest),t=>t.to).map(t=>({label:t.to,sub:t.km?`${t.km} km`:"",value:t.to,km:t.km,em:"🚗"}));
+      const clin=cl.filter(c=>!prev.some(p=>p.value===c.name+", "+c.address)).map(c=>({label:c.name,sub:c.address+(c.km?` · ${c.km} km`:""),value:c.name+", "+c.address,km:c.km,em:"🏥"}));
+      return prev.concat(clin).slice(0,8); },
+    it=>{ $("#tTo").value=it.value; if(it.km) $("#tKm").value=it.km; });
+  suggestInput($("#tWhyOther"),"❓ Why?",()=>{ const std=["Medical appt (round trip)","Hospital stay (round trip)"]; return uniqRecent([...data.trips].filter(t=>!std.includes(t.purpose)).sort(byNewest),t=>t.purpose).map(t=>({label:t.purpose,value:t.purpose,em:"❓"})); });
+  suggestInput($("#tPark"),"🅿️ Parking",()=>uniqRecent([...data.trips,...data.appts].filter(x=>String(x.parking||"").trim()).sort(byNewest),x=>String(+x.parking)).map(x=>({label:money(+x.parking),sub:x.to||x.name,value:String(+x.parking),em:"🅿️"})));
+  parkHint($("#tPark"),$("#tParkW"),()=>tst.date,"");
+  const photos=photoCtl([]);
+  $("#saveTrip").onclick=()=>{
+    const date=tst.date, to=$("#tTo").value.trim(), km=$("#tKm").value.trim();
+    const why = purpose==="other" ? $("#tWhyOther").value.trim() : purpose;
+    if(!date) return need("#tDate","📅 Pick a day"); if(!why) return need(purpose==="other"?"#tWhyOther":"#tWhy","❓ Why?"); if(!to) return need("#tTo","📍 Where to?"); if(!km) return need("#tKm","🚗 How many km?");
+    data.trips.push(Object.assign({id:uid(),date,purpose:why,to,km,parking:$("#tPark").value.trim()},photos.length?{photos:photos.slice()}:{})); save(); month=date.slice(0,7); closeSheet(); render(); toast("✅ Saved");
+  };
+}
+
+/* ---------- to do + info ---------- */
+const TODO=[
+  {id:"agree",em:"📝",t:"Sign your FSCD agreement",s:"Sign and send it back (online or by mail)"},
+  {id:"bank",em:"🏦",t:"Direct deposit form",s:"Plus a void cheque. Needed to get paid back"},
+  {id:"triple",em:"👨‍👩‍👧",t:"Triple P form",s:"Fill in and email"},
+  {id:"ocr",em:"💻",t:"Sign up for online claims (OCR)",s:"Needs an Alberta.ca account"}
+];
+const entryCount=()=>data.appts.length+data.visits.length+data.trips.length;
+// remind about a backup when there are records and none was made in the last 30 days
+function backupDue(){ if(entryCount()<3) return false; const lb=data.settings.lastBackup; if(!lb) return true; return (parseISO(todayISO())-parseISO(lb))/864e5>30; }
+// home-screen backup card: always there; strong when a backup is due, quiet when it's recent
+function backupCard(){
+  const lb=data.settings.lastBackup, due=backupDue()||(!lb&&entryCount()>0);
+  const sub=lb?`Last one: ${shortDate(lb)}`:"Keep your records safe";
+  if(due) return `<button class="start" data-act="go-backup" style="margin:12px 0 0"><span class="em">💾</span><span><b>Back up now</b><span>${esc(sub)}</span></span><span class="chev">›</span></button>`;
+  return `<button class="start" data-act="go-backup" style="background:var(--card);color:var(--ink);margin:12px 0 0"><span class="em" style="background:var(--blue-soft);color:var(--blue)">💾</span><span><b>Back up</b><span>${esc(lb?"✅ "+sub:sub)}</span></span><span class="chev">›</span></button>`;
+}
+const todoLeft=()=>TODO.filter(t=>!data.checks[t.id]).length;
+function bankHelp(){
+  openSheet(`
+    <h2>🏦 Direct deposit</h2>
+    <div class="info" style="background:#fff"><span class="em">1️⃣</span><div><b>Get a void cheque</b>From your bank app: "direct deposit form" or "void cheque". It must be printed by the bank, not handwritten.</div></div>
+    <div class="info" style="background:#fff"><span class="em">2️⃣</span><div><b>Fill in the form</b>Your name, address and bank numbers must match the void cheque exactly. No crossing out.</div></div>
+    <div class="info" style="background:#fff"><span class="em">3️⃣</span><div><b>Sign with a pen</b>Typed names are not accepted.</div></div>
+    <div class="info" style="background:#fff"><span class="em">4️⃣</span><div><b>Send both</b>Form + void cheque to your FSCD worker.</div></div>
+    <button class="big ghost" data-close>Got it</button>`);
+}
+
+/* ---------- Questions (FAQ) ----------
+   Every answer comes from the FSS Family Information Package (templates/package.pdf).
+   p = page number in that PDF. hl = words to highlight on that page.
+   When FSCD sends a new package: replace templates/package.pdf, then check each answer and page here. */
+const PKG_NAME="FSCD Family Information Package";
+const FAQ=[
+ {sec:"resp",em:"🧑‍🤝‍🧑",name:"Respite"},
+ {id:"rhours",em:"🕒",q:"How many respite hours?",a:"Up to 240 hours a year.",p:5,hl:["Up to 240 hours/year"],k:"respite hours limit year 240 how much",mine:()=>{ const u=limUse("resp"); return u.lim?`You used ${fmtH(u.used)} h. ${u.left>=0?fmtH(u.left)+" h left":fmtH(-u.left)+" h over"}.`:""; }},
+ {id:"rwhen",em:"🚫",q:"When can't I use respite?",a:"Not while your child is normally in school. Not while you work, train or go to school.",p:5,hl:["Cannot be used when","normally","in school","working or attending","training or"],k:"respite not allowed school work training cannot when"},
+ {id:"rwork",em:"🧑‍💼",q:"Respite so I can go to work?",a:"No. Respite can't cover childcare for work, training or school. Ask your FSCD worker about other help.",p:28,hl:["respite support cannot be used to cover work"],k:"work job childcare daycare school training respite"},
+ {id:"rhome",em:"🏠",q:"Where can respite happen?",a:"At your home, at the worker's home, or out in the community.",p:28,hl:["respite may be provided in the family home"],k:"where home house community place respite"},
+ {id:"rpaper",em:"📝",q:"What paper for respite?",a:"The Record of Services form. You and the worker both sign it. Keep proof you paid.",p:5,hl:["Complete a Record of","Services form","Document proof of","payment"],k:"respite form record of services sign paper worker"},
+ {sec:"work",em:"👤",name:"Worker"},
+ {id:"rwho",em:"👪",q:"Who can be my worker?",a:"A friend, neighbour (18+) or an agency. A relative 18+ only with FSCD's OK, but not a parent. A 16 or 17 year old who is not family.",p:28,hl:["private person","adult relative","except for","not a relative"],k:"worker sitter respite provider relative family sister brother grandma aunt friend neighbour teen 16 17 parent hire"},
+ {id:"rcheck",em:"🔍",q:"How do I check a new worker?",a:"Call at least 2 references. Ask for a resume. You can get a criminal record check from the police.",p:29,hl:["two (2) references","criminal record check","request a resume"],k:"hire hiring check references criminal record police resume new worker interview"},
+ {id:"rboss",em:"🧑‍💼",q:"Am I the worker's boss?",a:"Yes. You hire the worker, not the government. Tax (CRA) and Alberta work rules apply.",p:7,hl:["directly employ staff","the employer."],k:"boss employer employ tax cra pay rules worker"},
+ {id:"rins",em:"🏠",q:"Do I need insurance?",a:"Tell your home insurance company you have a worker in your home.",p:29,hl:["contact your insurance company"],k:"insurance liability home accident worker"},
+ {id:"rbad",em:"⚠️",q:"Worker not working out?",a:"Talk with them first. You can find a new worker. A Family Resource Centre can help.",p:29,hl:["and honest discussion","not the right fit"],k:"problem bad worker complaint concern fire change new worker"},
+ {sec:"doc",em:"🏥",name:"Doctor and trips"},
+ {id:"dvisits",em:"🏥",q:"How many doctor visits?",a:"Up to 36 appointments a year.",p:6,hl:["Up to 36 medical/health","professional appointments"],k:"doctor appointments visits medical limit 36 year how many",mine:()=>{ const u=limUse("doc"); return u.lim?`You used ${fmtH(u.used)}. ${u.left>=0?fmtH(u.left)+" left":fmtH(-u.left)+" over"}.`:""; }},
+ {id:"km",em:"🚗",q:"How much for driving?",a:"12 cents per km, for disability-related appointments.",p:31,hl:["Mileage (@ $0.12 per kilometre)"],k:"mileage km kilometre drive driving gas car rate 0.12",mine:()=>{ const l=tripsInMonth(); if(!l.length) return ""; const km=l.reduce((s,t)=>s+(+t.km||0),0), r=parseFloat(data.settings.rate)||0; return `This month: ${fmtH(km)} km = $${(km*r).toFixed(2)}.`; }},
+ {id:"park",em:"🅿️",q:"How much for parking?",a:"Up to $10 a day. Keep the receipt.",p:31,hl:["Parking (up to $10 daily)"],k:"parking park 10 receipt hospital"},
+ {id:"meals",em:"🍽",q:"Meals and hotel?",a:"Only for trips of 8 hours or more. Keep receipts. No meals for your child while in hospital.",p:31,hl:["eight hours","cannot claim reimbursement for meals"],k:"meals food hotel stay overnight 8 hours ronald mcdonald accommodation"},
+ {id:"dsign",em:"✍️",q:"What does the doctor sign?",a:"The Confirmation of Medical Appointment form. They sign, initial or stamp it.",p:21,hl:["Confirmation of Medical","signature, initial or stamp"],k:"doctor sign signature stamp form confirmation hospital proof"},
+ {id:"dnote",em:"📄",q:"No form at the visit?",a:"A note from the office works. It needs the doctor's name and address, the date and time, and a signature, initial or stamp.",p:21,hl:["a note indicating the child was seen","name and address of medical provider","time and date of appointment","certification from the medical provider"],k:"forgot form note doctor office proof letter"},
+ {id:"sib",em:"👧",q:"Care for my other kids?",a:"Yes. Sibling care can be covered while you're at your child's appointments.",p:31,hl:["sibling care"],k:"sibling brother sister other kids children babysitter care appointment"},
+ {id:"outprov",em:"✈",q:"Care outside Alberta?",a:"Alberta Health must OK it in writing first, unless it's an emergency.",p:31,hl:["approved, in writing by Alberta Health","emergency medical evacuation"],k:"out of province outside alberta travel bc saskatchewan approval"},
+ {sec:"money",em:"🧾",name:"Money and papers"},
+ {id:"claim",em:"💻",q:"How do I get paid back?",a:"Send claims online (OCR) with a verified Alberta.ca account. If you can't, email or mail the forms.",p:10,hl:["Online Claims Reimbursement (OCR) is the quickest","verified Alberta.ca Account","submit by email"],k:"paid back reimburse claim ocr online money alberta.ca account submit"},
+ {id:"proof",em:"📷",q:"What proves I paid?",a:"An e-transfer screenshot that says deposited. Or a cancelled cheque, front and back. Or a signed cash receipt.",p:17,hl:["Electronic payments","Transfer:","successfully deposited"],k:"proof paid payment screenshot etransfer cheque receipt"},
+ {id:"cash",em:"💵",q:"Can I pay cash?",a:"Try not to. No more than $100 cash a month. Get a signed receipt. E-transfer or cheque is better.",p:19,hl:["should not be used to pay expenses of more than $100","it is preferable to use e","receipt of payment"],k:"cash pay money receipt 100 etransfer cheque"},
+ {id:"cheque",em:"🏦",q:"Paying by cheque?",a:"Keep the cancelled cheque, front and back. Save a copy soon. Banks only keep it online for a while.",p:18,hl:["cancelled cheque is the only valid proof","back of the cheque must also be provided","limited amount of time"],k:"cheque check cancelled bank back proof"},
+ {id:"dd",em:"🏦",q:"How do I set up direct deposit?",a:"Fill in the direct deposit form. Add a bank-printed cheque with VOID written on it. Mail it with your agreement, or email a scan.",p:9,hl:["printed VOID cheque from your bank","SCSS.FSCDFamilySupportServicesTeam@gov.ab.ca"],k:"direct deposit bank void cheque account form",act:["📧","Email FSCD","mailto:SCSS.FSCDFamilySupportServicesTeam@gov.ab.ca"]},
+ {id:"keep",em:"🗂️",q:"How long do I keep papers?",a:"7 years. The respite form itself says 10, so keep those 10.",p:13,hl:["seven (7) years"],k:"keep records years papers receipts how long store"},
+ {id:"blackout",em:"✏️",q:"Can I hide private info?",a:"Yes, you can black out private info. Don't hide anything FSCD needs to check the claim.",p:21,hl:["black out","not be removed."],k:"private privacy black out hide cover personal info"},
+ {id:"unused",em:"♻️",q:"Didn't use all the money?",a:"If FSCD asks, you pay it back within 30 days.",p:7,hl:["you must return the amount"],k:"unused leftover money pay back return 30 days funds"},
+ {sec:"agree",em:"📋",name:"Agreement and online"},
+ {id:"alen",em:"📅",q:"How long is my agreement?",a:"Up to 3 years.",p:26,hl:["term of up to three years"],k:"agreement length how long years term multi year"},
+ {id:"change",em:"🔁",q:"Can my agreement change?",a:"Yes. Talk to your FSCD worker any time.",p:26,hl:["can be amended","Contact your"],k:"change agreement amend update needs worker"},
+ {id:"sign",em:"✍️",q:"Sign the agreement on my phone?",a:"Yes, with a verified Alberta.ca account. The code comes by mail in about 10 days. Help desk: 1-844-643-2789.",p:23,hl:["mail an activation code","takes around 10 days","call the help desk"],k:"sign digital signature phone online alberta.ca verify account code",act:["📞","Call help desk","tel:18446432789"]},
+ {id:"ocr",em:"💻",q:"Can't see my services online?",a:"The online claims site updates overnight. Check again tomorrow.",p:24,hl:["OCR is updated overnight"],k:"ocr online services missing can't see overnight"},
+ {id:"end",em:"🚫",q:"Ending the agreement?",a:"Either side gives 30 days' notice in writing.",p:8,hl:["notice of termination in writing"],k:"end stop cancel terminate agreement notice 30 days"},
+ {sec:"help",em:"📞",name:"Help and more"},
+ {id:"call",em:"📞",q:"How do I reach FSCD?",a:"Call 1-888-278-7088 (voicemail). Or ask your FSCD worker.",p:10,hl:["(voicemail line only)"],k:"phone call fscd number contact worker voicemail office",act:["📞","Call FSCD","tel:18882787088"]},
+ {id:"frc",em:"🙋",q:"Who can help me for free?",a:"A Family Resource Centre. Free, and no referral needed. In Central Alberta: Steps Society.",p:27,hl:["need a referral from your worker","no cost","Steps Society Central Alberta 1-877-646-6249"],k:"help free family resource centre frc steps society hire staff find worker",act:["📞","Call Steps Society","tel:18776466249"]},
+ {id:"couns",em:"💬",q:"Counselling?",a:"Up to 20 hours a year. Use work or health benefits first. The receipt needs the counsellor's licence number.",p:30,hl:["access counselling services or coverage from other available programs first","license/registration number"],k:"counselling counseling therapy therapist counsellor 20 hours"},
+ {id:"cloth",em:"👕",q:"Clothing and shoes?",a:"Up to $400 a year, only for extra costs caused by the disability. Mark the items on the receipt.",p:32,hl:["extraordinary costs of clothing and footwear","clearly marked on receipts"],k:"clothing clothes shoes footwear 400 receipt"},
+ {id:"triple",em:"👨‍👩‍👧",q:"What is Triple P?",a:"A parenting course. Stepping Stones Triple P is for parents of children with disabilities. Send the referral form.",p:6,hl:["Stepping Stones Triple P, designed for parents of children with","disabilities","Referral"],k:"triple p parenting course stepping stones referral",go:"triple"}
+];
+{ let cur=null; FAQ.forEach(f=>{ if(f.sec) cur=f; else f.cat=cur.sec; }); }
+function limUse(kind){
+  const st=data.settings, Y=agreementYear(), inY=x=>x.date>=Y.from&&x.date<=Y.to;
+  let used, lim;
+  if(kind==="resp"){ used=data.visits.filter(v=>inY(v)&&!isDaysSvc(svcOf(v))&&/Respite/.test(svcOf(v))).reduce((a,v)=>a+hoursOf(v),0); lim=parseFloat(st.limResp??"240")||0; }
+  else { used=data.appts.filter(inY).length; lim=parseFloat(st.limDoc??"36")||0; }
+  return {used,lim,left:lim-used};
+}
+let faqOpen=null;
+function faqItem(f){
+  const open=faqOpen===f.id, mine=open&&f.mine?f.mine():"";
+  return `<div class="faq${open?" open":""}" data-cat="${f.cat}" data-fk="${esc((f.q+" "+f.a+" "+f.k).toLowerCase())}">
+    <button class="fq" data-faq="${f.id}" aria-expanded="${open}"><span class="em">${f.em}</span><span class="qt">${esc(f.q)}</span><span class="chev">${open?"▾":"›"}</span></button>
+    ${open?`<div class="fa">
+      <p>${esc(f.a)}</p>
+      ${mine?`<div class="mine">📊 ${esc(mine)}</div>`:""}
+      <div class="fbtns">
+        <button class="big ghost" data-page="${f.id}"><span class="em">📄</span>See page ${f.p}</button>
+        <button class="big ghost say" data-say="${f.id}" aria-label="Read out loud"><span class="em">🔊</span></button>
+      </div>
+      ${f.act?`<button class="big blue" data-href="${esc(f.act[2])}"><span class="em">${f.act[0]}</span>${esc(f.act[1])}</button>`:""}
+      ${f.go?`<button class="big blue" data-go="${f.go}"><span class="em">${f.em}</span>Start it</button>`:""}
+    </div>`:""}
+  </div>`;
+}
+let faqCat=null;
+function faqHTML(){
+  const cat=FAQ.find(f=>f.sec===faqCat);
+  return `<div class="top">${cat?`<button class="iconbtn" data-faqcat="" aria-label="Back">⬅️</button><h1>${cat.em} ${esc(cat.name)}</h1>`:`<button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>❓ Questions</h1>`}</div>
+    <div class="fsearch"><span class="em">🔍</span><input id="faqQ" type="search" placeholder="Type a word, like parking" autocomplete="off" enterkeyhint="search"></div>
+    <div id="faqCats" class="fcats">${FAQ.filter(f=>f.sec).map(c=>`<button class="fcat" data-faqcat="${c.sec}"><span class="em">${c.em}</span><span class="qt">${esc(c.name)}</span><span class="n">${FAQ.filter(f=>f.cat===c.sec).length}</span><span class="chev">›</span></button>`).join("")}</div>
+    <div id="faqList">${FAQ.filter(f=>!f.sec).map(faqItem).join("")}</div>
+    <div class="empty" id="faqNone" style="display:none">🤷 No match.<br>Call FSCD: 1-888-278-7088</div>
+    <div class="hint" style="text-align:center;margin:14px 6px">📄 Answers come from the ${PKG_NAME}.</div>`;
+}
+function faqFilter(){
+  const box=$("#faqQ"); if(!box) return;
+  const words=box.value.toLowerCase().split(/\s+/).filter(w=>w.length>1);
+  let shown=0;
+  document.querySelectorAll("#faqList .faq").forEach(el=>{ const ok=words.length?words.some(w=>el.dataset.fk.includes(w)):(faqCat&&el.dataset.cat===faqCat); el.style.display=ok?"":"none"; if(ok) shown++; });
+  $("#faqCats").style.display=(!words.length&&!faqCat)?"":"none";
+  $("#faqNone").style.display=(words.length&&!shown)?"":"none";
+}
+function faqSay(id){
+  const f=FAQ.find(x=>x.id===id); if(!f||!window.speechSynthesis) return;
+  const strip=s=>s.replace(/[\u{1F000}-\u{1FFFF}☀-➿️]/gu,"");
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(strip(f.a+" "+(f.mine?f.mine():"")));
+  u.lang="en-CA"; u.rate=0.9; speechSynthesis.speak(u);
+}
+let pkgBytes=null;
+async function faqPage(id){
+  const f=FAQ.find(x=>x.id===id); if(!f) return;
+  openSheet(`<h2>📄 Page ${f.p}</h2>
+    <div class="hint" style="margin:-4px 0 10px">${PKG_NAME}</div>
+    <div id="pgz"></div>
+    <div id="pgv" class="pgv"><div class="ready"><span class="em">⏳</span>Loading…</div></div>
+    <button class="big ghost" data-close>Close</button>`);
+  const box=$("#pgv");
+  try{
+    const lib=await loadPdfJs();
+    if(!pkgBytes){ const r=await fetch("templates/package.pdf"); if(!r.ok) throw 0; pkgBytes=new Uint8Array(await r.arrayBuffer()); }
+    const pdf=await lib.getDocument({data:pkgBytes.slice(0)}).promise;
+    const page=await pdf.getPage(f.p);
+    const width=box.clientWidth||340, v1=page.getViewport({scale:1});
+    const scale=(width/v1.width)*Math.min(3,(window.devicePixelRatio||1)*1.6);
+    const vp=page.getViewport({scale});
+    const c=document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+    const ctx=c.getContext("2d");
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
+    // yellow marks over the lines that hold the answer
+    const tc=await page.getTextContent(), keys=(f.hl||[]).map(s=>s.toLowerCase());
+    let firstY=null, bx=null;
+    ctx.save(); ctx.globalCompositeOperation="multiply"; ctx.fillStyle="#ffe14d";
+    for(const it of tc.items){
+      const s=(it.str||"").toLowerCase().replace(/\s+/g," ").trim(); if(s.length<3) continue;
+      if(!keys.some(k=>s.includes(k)||(k.includes(s)&&s.length>=12))) continue;
+      const tx=lib.Util.transform(vp.transform,it.transform), h=Math.hypot(tx[2],tx[3]), w=it.width*scale;
+      const r=[tx[4]-3,tx[5]-h*1.05,w+6,h*1.35];
+      ctx.fillRect(...r);
+      if(firstY===null||tx[5]<firstY) firstY=tx[5];
+      bx=bx?[Math.min(bx[0],r[0]),Math.min(bx[1],r[1]),Math.max(bx[2],r[0]+r[2]),Math.max(bx[3],r[1]+r[3])]:[r[0],r[1],r[0]+r[2],r[1]+r[3]];
+    }
+    ctx.restore();
+    box.innerHTML=""; box.appendChild(c);
+    // close-up of the yellow part, big, above the full page
+    if(bx){ const pad=vp.width*0.03, x0=Math.max(0,bx[0]-pad), y0=Math.max(0,bx[1]-pad), x1=Math.min(vp.width,bx[2]+pad), y1=Math.min(vp.height,bx[3]+pad);
+      if((y1-y0)<vp.height*0.5){ const z=document.createElement("canvas"); z.width=x1-x0; z.height=y1-y0; z.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,x1-x0,y1-y0);
+        const zw=$("#pgz"); zw.innerHTML=`<div class="lab" style="margin:0 2px 6px">🔍 The answer</div><div class="pgv" style="margin-bottom:14px"></div><div class="lab" style="margin:0 2px 6px">📄 Whole page · pinch to zoom</div>`; zw.children[1].appendChild(z); return; } }
+    if(firstY!==null){ const sh=$("#sheet"), y=box.offsetTop+(firstY/vp.height)*box.clientHeight-120; sh.scrollTo({top:Math.max(0,y),behavior:"smooth"}); }
+  }catch(e){ box.innerHTML=`<div class="warn">📶 Couldn't open the page. Open the app once with internet, then try again.</div>`; }
+}
+
+/* ---------- Triple P wizard ---------- */
+const TP_EMAIL="alss.fscdtriplepcen@gov.ab.ca";
+const WIZ=[
+  {k:"parentName",max:40,em:"🙋",q:"Your name",from:"parentName"},
+  {k:"relation",em:"👪",q:"You are the child's…",type:"chips",opts:["Father","Mother","Guardian","Grandparent"]},
+  {k:"phone",max:20,em:"📞",q:"Your phone",from:"phone",im:"tel"},
+  {k:"email",max:60,em:"📧",q:"Your email",from:"email",im:"email"},
+  {k:"childFirst",max:30,em:"👧",q:"Child's first name"},
+  {k:"childMiddle",max:30,em:"👧",q:"Child's middle name",hint:"Leave blank if none",optional:true},
+  {k:"childLast",max:30,em:"👧",q:"Child's last name"},
+  {k:"childDob",em:"🎂",q:"Child's birthday",type:"date"},
+  {k:"childId",max:15,em:"🔢",q:"FSCD child ID",from:"childId",optional:true},
+  {k:"diagnosis",max:250,em:"🩺",q:"Child's disability or diagnosis",type:"area"},
+  {k:"when",max:250,em:"🕒",q:"When are you free for sessions?",hint:"If evenings, say after what time",type:"area"},
+  {k:"caseName",max:40,em:"🧑‍💼",q:"FSCD worker's name",optional:true,hint:"Skip if you don't know"},
+  {k:"caseEmail",max:60,em:"📧",q:"FSCD worker's email",optional:true,im:"email",hint:"Skip if you don't know"},
+  {k:"address",max:110,em:"🏠",q:"Your home address",from:"home",type:"area"},
+  {k:"second",max:40,em:"👥",q:"Other parent/guardian name",optional:true,hint:"Skip if none"},
+  {k:"secondRel",max:30,em:"👪",q:"Their relationship to the child",optional:true,show:d=>!!d.second},
+  {k:"secondPhone",max:20,em:"📞",q:"Their phone",optional:true,im:"tel",show:d=>!!d.second},
+  {k:"secondEmail",max:60,em:"📧",q:"Their email",optional:true,im:"email",show:d=>!!d.second},
+  {k:"language",max:60,em:"🗣️",q:"Other languages you speak",optional:true,hint:"Skip if only English"},
+  {k:"langHelp",em:"🗣️",q:"Need language help?",type:"chips",opts:["No","Yes"]},
+  {k:"reason",max:500,em:"🎯",q:"What do you want help with?",hint:"Challenges or goals",type:"area"},
+  {k:"how",em:"💻",q:"How do you want it?",type:"chips",opts:["Virtually","In-person","Group setting"]},
+  {k:"more",max:500,em:"📝",q:"Anything else for them?",hint:"Other kids at home, done Triple P before?",type:"area",optional:true},
+  {k:"consent",em:"✅",q:"OK to share your info with Triple P staff?",type:"chips",opts:["Yes, I agree"]}
+];
+let wiz=0;
+function wizSteps(){ return WIZ.filter(w=>!w.show||w.show(data.triple)); }
+function renderWizard(app){
+  const steps=wizSteps(); const T=data.triple;
+  if(wiz>=steps.length){
+    app.innerHTML=`
+      <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>👨‍👩‍👧 Triple P</h1></div>
+      <div class="fcard"><button class="fthumb" data-preview="triple" aria-label="See the form"><span class="ph">📄</span><span class="zoom">🔍</span></button><div class="fside"><div class="frow"><span>📝 Answered</span><b>${steps.filter(x=>String(T[x.k]||"").trim()).length}/${steps.length}</b></div><div class="bar okb"><i style="width:${Math.round(steps.filter(x=>String(T[x.k]||"").trim()).length/steps.length*100)}%"></i></div><div class="hint">Tap the picture to see the form</div></div></div>
+      <div class="ready"><span class="em">🎉</span><b>All done</b><div class="steps">🖨️ ➜ ✍️ ➜ 📷 ➜ 📧</div><div class="hint" style="font-size:16px">Print · sign · photo · email</div></div>
+      <div class="info" style="margin-top:14px"><span class="em">📧</span><div><b>Email it to</b><span style="word-break:break-all">${TP_EMAIL}</span><br><span class="hint">Red Deer and Central Alberta</span></div></div>
+      <button class="big ghost" data-act="copy-tp" style="margin-top:0">📋 Copy email address</button>
+      <button class="big trip" data-act="print-triple"><span class="em">👀</span>See the form</button>
+      <button class="big ghost" data-act="wiz-restart">✏️ Change answers</button>`;
+    return;
+  }
+  const w=steps[wiz]; const st=data.settings;
+  if(T[w.k]===undefined && w.from) T[w.k]=st[w.from]||"";
+  if(T[w.k]===undefined && w.k==="childFirst"){ const parts=(st.childName||"").trim().split(/\s+/); if(parts[0]) { T.childFirst=parts[0]; if(parts.length>1) T.childLast=parts[parts.length-1]; } }
+  const v=T[w.k]||"";
+  let field;
+  if(w.type==="chips") field=`<div class="chips">${w.opts.map(o=>`<button class="chip ${v===o?"on":""}" data-wchip="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  else if(w.type==="area") field=`<textarea id="wIn" rows="4" ${w.max?`maxlength="${w.max}"`:""}>${esc(v)}</textarea>${w.max?`<div class="hint" id="wCount" style="text-align:right;margin-top:4px">${v.length} / ${w.max}</div>`:""}`;
+  else if(w.type==="date") field=dtBoxHTML("wDate","date",v,"Tap to pick the birthday");
+  else field=`<input id="wIn" value="${esc(v)}" ${w.max?`maxlength="${w.max}"`:""} ${w.im?`inputmode="${w.im}"`:""} ${w.im==="email"?'autocapitalize="off"':""}>`;
+  app.innerHTML=`
+    <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>👨‍👩‍👧 Triple P</h1><span class="hint" style="font-size:17px">${wiz+1}/${steps.length}</span></div>
+    <div class="fcard">
+      <button class="fthumb" data-preview="triple" aria-label="See the form"><span class="ph">📄</span><span class="zoom">🔍</span></button>
+      <div class="fside">
+        <div class="frow"><span>📝 Answered</span><b>${steps.filter(x=>String(T[x.k]||"").trim()).length}/${steps.length}</b></div>
+        <div class="bar okb"><i style="width:${Math.round(steps.filter(x=>String(T[x.k]||"").trim()).length/steps.length*100)}%"></i></div>
+        <div class="frow"><span>➡️ Question</span><b>${wiz+1}/${steps.length}</b></div>
+        <div class="bar lines"><i style="width:${Math.round((wiz+1)/steps.length*100)}%"></i></div>
+      </div>
+    </div>
+    <div class="wq"><span class="em">${w.em}</span>${esc(w.q)}</div>
+    ${w.hint?`<div class="hint" style="font-size:17px;margin:-6px 0 12px">${esc(w.hint)}</div>`:""}
+    ${field}
+    <button class="big trip" data-act="wiz-next"><span class="em">➡️</span>${w.optional&&!v?"Skip":"Next"}</button>
+    ${wiz>0?`<button class="big ghost" data-act="wiz-back">⬅️ Back</button>`:""}`;
+  if(w.type==="date") bindDT("wDate","date",T,w.k,{dob:true,max:todayISO(),title:"Child's birthday",ph:"Tap to pick the birthday"},()=>{ save(); render(); });
+  const inp=$("#wIn"); if(inp){ inp.addEventListener("input",()=>{ T[w.k]=inp.value; save(); const wc=$("#wCount"); if(wc) wc.textContent=`${inp.value.length} / ${w.max}`; const nb=document.querySelector('[data-act="wiz-next"]'); if(nb) nb.innerHTML=`<span class="em">➡️</span>${w.optional&&!inp.value?"Skip":"Next"}`; clearTimeout(thumbTimer); thumbTimer=setTimeout(()=>drawThumb("triple"),600); }); }
+}
+function wizNext(){
+  const steps=wizSteps(), w=steps[wiz], v=(data.triple[w.k]||"").trim();
+  if(!w.optional && !v){ need(w.type==="chips"?document.querySelector("#app .chips"):(w.type==="date"?"#wDate":"#wIn"), w.type==="chips"?"👆 Tap one":"✏️ Fill this in"); return; }
+  wiz++; render(); window.scrollTo(0,0);
+}
+
+/* ---------- PDF building ---------- */
+const TPL_FILE={doc:"medical.pdf",resp:"respite.pdf",trip:"mileage.pdf",triple:"triple.pdf"};
+const tplCache={};
+async function loadTemplate(kind){
+  if(kind in tplCache) return tplCache[kind];
+  try{ const r=await fetch("templates/"+TPL_FILE[kind]); if(!r.ok) throw 0; const b=new Uint8Array(await r.arrayBuffer()); if(b[0]!==0x25) throw 0; tplCache[kind]=b; }
+  catch(e){ return null; }
+  return tplCache[kind];
+}
+// pdf-lib loads after the first screen is shown; wait for it here
+function pdfLibReady(){ if(window.PDFLib) return Promise.resolve();
+  return new Promise((res,rej)=>{ const chk=()=>window.PDFLib?res():rej(new Error("nolib"));
+    if(document.readyState==="complete") chk(); else window.addEventListener("load",chk,{once:true}); }); }
+async function buildPDF(kind){
+  await pdfLibReady();
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const doc = await PDFDocument.create();
+  const F = await doc.embedFont(StandardFonts.Helvetica);
+  const B = await doc.embedFont(StandardFonts.HelveticaBold);
+  const I = await doc.embedFont(StandardFonts.HelveticaOblique);
+  const black=rgb(0,0,0), blue=rgb(0.05,0.15,0.55), gray=rgb(0.45,0.45,0.45);
+  const clean = s => String(s??"").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g,"");
+  const ctx = (page) => {
+    const PH=page.getHeight();
+    const T=(s,x,yTop,size=10,font=F,color=black)=>page.drawText(clean(s),{x,y:PH-yTop-size*0.8,size,font,color});
+    const fit=(s,max,size,font,min=4.5)=>{ s=clean(s); while(size>min && font.widthOfTextAtSize(s,size)>max) size-=0.25; return size; };
+    const wrap=(s,max,size,font)=>{ const words=clean(s).split(/\s+/); const lines=[]; let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(font.widthOfTextAtSize(t,size)>max && cur){ lines.push(cur); cur=w; } else cur=t; } if(cur) lines.push(cur); return lines; };
+    const P=(s,x,yTop,max,size=10,font=F,lead=1.25,color=black)=>{ const L=wrap(s,max,size,font); L.forEach((l,i)=>T(l,x,yTop+i*size*lead,size,font,color)); return yTop+L.length*size*lead; };
+    const line=(x1,y1,x2,y2,th=0.8)=>page.drawLine({start:{x:x1,y:PH-y1},end:{x:x2,y:PH-y2},thickness:th,color:black});
+    const box=(x,yTop,w,h,th=0.8)=>page.drawRectangle({x,y:PH-yTop-h,width:w,height:h,borderWidth:th,borderColor:black});
+    const center=(s,cx,yTop,size,font)=>{ s=clean(s); T(s,cx-font.widthOfTextAtSize(s,size)/2,yTop,size,font); };
+    // shrink text until it fits in maxLines lines of width max; last resort trims with "..."
+    const fitLines=(s,max,maxLines,size,font,min=4.5)=>{ s=clean(s); let L=wrap(s,max,size,font);
+      const tooWide=()=>L.some(l=>font.widthOfTextAtSize(l,size)>max);
+      while((L.length>maxLines||tooWide()) && size>min){ size-=0.25; L=wrap(s,max,size,font); }
+      if(L.length>maxLines){ L=L.slice(0,maxLines); let last=L[maxLines-1]; while(last && font.widthOfTextAtSize(last+"...",size)>max) last=last.slice(0,-1); L[maxLines-1]=last+"..."; }
+      L=L.map(l=>{ while(font.widthOfTextAtSize(l,size)>max && l.length) l=l.slice(0,-1); return l; });
+      return {size,lines:L}; };
+    const centerFit=(s,cx,yTop,maxW,size,font,color=black)=>{ s=clean(s); const sz=fit(s,maxW,size,font); page.drawText(s,{x:cx-font.widthOfTextAtSize(s,sz)/2,y:PH-yTop-sz*0.8-(size-sz)/2,size:sz,font,color}); };
+    return {T,fit,wrap,P,line,box,center,fitLines,centerFit};
+  };
+  const st=data.settings;
+
+  const tpl=await loadTemplate(kind);
+  if(tpl){
+    const src=await PDFDocument.load(tpl);
+    const addTpl=async(idx=0)=>{ const [pg]=await doc.copyPages(src,[idx]); doc.addPage(pg); return pg; };
+    const cell2=(c,txt,x,yt,w,h,size,font)=>{ const R=c.fitLines(txt,w,2,size,font,4.5); const off=R.lines.length===1?(h-R.size)/2:(h-2*R.size*1.15)/2; R.lines.forEach((l,k)=>c.T(l,x,yt+off+k*R.size*1.15,R.size,font,blue)); };
+    if(kind==="doc"){
+      const list=inMonth(data.appts); const pages=Math.max(1,Math.ceil(list.length/LIMIT.doc));
+      for(let p=0;p<pages;p++){
+        const page=await addTpl(0); const c=ctx(page);
+        c.T(st.childName,174,252,c.fit(st.childName,270,12,F),F,blue);
+        c.T(st.childId,174,281,c.fit(st.childId,270,12,F),F,blue);
+        c.T(monthLabel(month),318,309,c.fit(monthLabel(month),150,12,F),F,blue);
+        const rows=[341,369,424,479,532,587,641,690];
+        list.slice(p*LIMIT.doc,(p+1)*LIMIT.doc).forEach((a,i)=>{
+          const top=rows[i+1]+5, boxH=rows[i+2]-rows[i+1]-9, bw=150;
+          // form asks for the NAME only (no address)
+          let ns=11, N;
+          for(;;){ N=c.fitLines(a.name,bw,3,ns,B,ns); const ok=N.lines.length*ns*1.2<=boxH && !N.lines.join("").endsWith("..."); if(ok||ns<=6) break; ns-=0.25; }
+          const nTop=top+Math.max(0,(boxH-N.lines.length*N.size*1.2)/2);
+          N.lines.forEach((l,k)=>c.T(l,71,nTop+k*N.size*1.2,N.size,B,blue));
+          const d=parseISO(a.date);
+          c.T(`${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,232,top+6,10,F,blue);
+          c.T(time12(a.time),232,top+20,10,F,blue);
+        });
+        if(pages>1) c.T(`Form ${p+1} of ${pages}`,470,705,8,F,gray);
+      }
+    }
+    if(kind==="resp"){
+      const allV=inMonth(data.visits), nSh=Math.max(1,Math.ceil(allV.length/LIMIT.resp));
+      const R=[329.7,342,354,366,378,390,402,414,426,438,450,462,474,486,498,510,522,534,546,558,570,582,594,606,617,629,641,653,664,676,688];
+      const X=[36,102,132,162,204,252,294,336,378,420,468,528,570];
+      const w=st.worker||{}, [yy,mm]=month.split("-");
+      const colOf=sv=>{ const i=Math.max(0,SERVICES.indexOf(sv)); const sx=X[3+i], sw=X[4+i]-sx; return {sw, scx:sx+sw/2}; };
+      for(let sh=0;sh<nSh;sh++){
+        const list=allV.slice(sh*LIMIT.resp,(sh+1)*LIMIT.resp);
+        const page=await addTpl(0); const c=ctx(page);
+        c.T(MONTHS[+mm-1],441,133,c.fit(MONTHS[+mm-1],70,10,F),F,blue);
+        c.T(yy,542,133,10,F,blue);
+        c.T(st.childName,86,172,c.fit(st.childName,322,10,F),F,blue);
+        c.T(st.childId,471,172,c.fit(st.childId,96,10,F),F,blue);
+        c.T(w.name,62,220,c.fit(w.name,305,10,F),F,blue);
+        if(w.related==="Yes") c.T("X",433.8,236.6,8.5,B,blue);
+        if(w.teen==="Yes") c.T("X",523.8,236.6,8.5,B,blue);
+        c.T(w.address,68,253,c.fit(w.address,298,10,F),F,blue);
+        c.T(w.postal,375,264,c.fit(w.postal,95,10,F),F,blue);
+        c.T(w.phone,477,264,c.fit(w.phone,90,10,F),F,blue);
+        const tot={};
+        list.forEach((v,i)=>{
+          const top=R[i], h=R[i+1]-R[i], yt=top+(h-7)/2, sv=svcOf(v), {sw,scx}=colOf(sv), q=visitQty(v);
+          tot[sv]=(tot[sv]||0)+q;
+          c.T(shortDate(v.date),38.5,yt,c.fit(shortDate(v.date),61,7,F),F,blue);
+          if(!isDaysSvc(sv)){ c.T(time12(v.start),103.5,yt,c.fit(time12(v.start),27,7,F),F,blue); c.T(time12(v.end),133.5,yt,c.fit(time12(v.end),27,7,F),F,blue); }
+          c.centerFit(fmtH(q),scx,yt,sw-4,7.5,F,blue);
+        });
+        svcList().forEach(sv=>{ const {sw,scx}=colOf(sv), wg=wageOf(sv);
+          if(wg) c.centerFit(money(wg)+"/"+unitOf(sv),scx,715+4,sw-4,7.5,F,blue);
+          if(tot[sv]!==undefined){ c.centerFit(fmtH(tot[sv]),scx,700+4,sw-4,7.5,B,blue); if(wg) c.centerFit(money(tot[sv]*wg),scx,730+4,sw-4,7.5,B,blue); } });
+        c.T(w.name,282,792,c.fit(w.name,186,10,F),F,blue);
+        c.T(st.parentName,282,878,c.fit(st.parentName,186,10,F),F,blue);
+        if(nSh>1) c.T(`Form ${sh+1} of ${nSh}`,400,979,7,F,gray);
+      }
+    }
+    if(kind==="trip"){
+      const list=tripsInMonth(), rate=parseFloat(st.rate)||0, per=LIMIT.trip, pages=Math.max(1,Math.ceil(list.length/per));
+      const X=[42.8,130.8,308.8,486.8,664.8,733.2,801.8,870.2,963.8], hdrB=147, rh=(532.2-147)/19, gy=532.2, grh=20.6;
+      const [yy,mm]=month.split("-");
+      for(let p=0;p<pages;p++){
+        const page=await addTpl(0); const c=ctx(page);
+        c.T(st.childName,137,86.5,c.fit(st.childName,520,11,F),F,blue);
+        c.T(MONTHS[+mm-1],738,86.5,c.fit(MONTHS[+mm-1],60,11,F),F,blue);
+        c.T(yy,876,86.5,11,F,blue);
+        const rows=list.slice(p*per,(p+1)*per);
+        const totKm=rows.reduce((a,t)=>a+(+t.km||0),0), totPark=rows.reduce((a,t)=>a+(+t.parking||0),0);
+        rows.forEach((t,i)=>{
+          const yt=hdrB+i*rh, d=parseISO(t.date);
+          cell2(c,`${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,X[0]+3,yt,X[1]-X[0]-6,rh,8,F);
+          cell2(c,t.purpose||"",X[1]+3,yt,X[2]-X[1]-6,rh,7.5,F);
+          cell2(c,t.from||"",X[2]+3,yt,X[3]-X[2]-6,rh,7.5,F);
+          { const full=[t.toName&&t.toName!==t.to?t.toName:"",t.to||""].filter(Boolean).join(", "); const chk=c.fitLines(full,X[4]-X[3]-6,2,7.5,F,4.5);
+            cell2(c,chk.lines.join(" ").endsWith("...")?(t.to||t.toName||""):full,X[3]+3,yt,X[4]-X[3]-6,rh,7.5,F); }
+          const km=+t.km||0, park=+t.parking||0, cy=yt+(rh-8.5)/2;
+          if(t.km) c.centerFit(fmtH(km),(X[4]+X[5])/2,cy,62,8.5,F,blue);
+          c.centerFit("$"+rate.toFixed(2),(X[5]+X[6])/2,cy,62,8.5,F,blue);
+          if(t.km) c.centerFit(money(km*rate),(X[6]+X[7])/2,cy,62,8.5,F,blue);
+          if(park) c.centerFit(money(park),(X[7]+X[8])/2,cy,88,8.5,F,blue);
+        });
+        if(rows.length){ const cy=gy+(grh-8.5)/2;
+          c.centerFit(fmtH(totKm)+" km",(X[4]+X[5])/2,cy,62,8.5,B,blue);
+          c.centerFit(money(totKm*rate),(X[6]+X[7])/2,cy,62,8.5,B,blue);
+          c.centerFit(money(totPark),(X[7]+X[8])/2,cy,88,8.5,B,blue); }
+        if(pages>1) c.T(`Form ${p+1} of ${pages}`,880,560,8,F,gray);
+      }
+    }
+    if(kind==="triple"){
+      const D=data.triple, today=new Date();
+      const lines=(c,val,x,yt,w,n,size=9.5)=>{ const Rr=c.fitLines(val||"",w,n,size,F,5.5); Rr.lines.forEach((l,k)=>c.T(l,x,yt+k*11,Rr.size,F,blue)); };
+      const one=(c,val,x,yt,w,size=10)=>{ if(val) c.T(val,x,yt,c.fit(val,w,size,F),F,blue); };
+      let page=await addTpl(0), c=ctx(page);
+      one(c,pad(today.getMonth()+1),412,194.5,20,9); one(c,pad(today.getDate()),459,194.5,21,9); one(c,String(today.getFullYear()),509,194.5,36,9);
+      one(c,D.childId,384,233,170); one(c,D.caseName,384,266,170); one(c,D.caseEmail,384,300,172,9.5);
+      one(c,D.parentName,97,351.5,222); one(c,D.phone,332,366,245);
+      one(c,D.relation,142,390,175);
+      let age=""; if(D.childDob){ const b=parseISO(D.childDob); let a=today.getFullYear()-b.getFullYear(); if(today<new Date(today.getFullYear(),b.getMonth(),b.getDate())) a--; age=String(a); }
+      one(c,age,99,418,215); one(c,D.email,332,433,246,9.5);
+      if(D.childDob){ const b=parseISO(D.childDob); one(c,`${MONTHS[b.getMonth()]} ${b.getDate()}, ${b.getFullYear()}`,137,449.6,180); }
+      one(c,D.childFirst,44,513,140); one(c,D.childMiddle,197,513,178); one(c,D.childLast,389,513,184);
+      lines(c,D.diagnosis,44,560,532,2); lines(c,D.when,44,604,532,3);
+      if(D.consent) c.T("X",39.0,656.5,8.5,B,blue);
+      page=await addTpl(1); c=ctx(page);
+      one(c,D.second,49,78,518); one(c,D.secondRel,49,123,518);
+      one(c,D.address,103,178.6,462);
+      one(c,D.secondPhone,49,356,518); one(c,D.secondEmail,49,405,518);
+      one(c,D.language,240,437,328);
+      if(D.langHelp==="Yes") c.T("X",429.6,478.4,7.5,B,blue);
+      if(D.langHelp==="No") c.T("X",476.6,478.4,7.5,B,blue);
+      lines(c,D.reason,49,522,520,3);
+      const hx={"Virtually":52.0,"In-person":113.1,"Group setting":178.1}[D.how]; if(hx) c.T("X",hx,587.6,7.5,B,blue);
+      lines(c,D.more,49,640,520,4);
+    }
+    doc.setTitle({doc:"Confirmation of Medical Appointment",resp:"Record of Services Provided",trip:"Mileage and Parking Log",triple:"Triple P Referral Form"}[kind]);
+    return await doc.save();
+  }
+
+  if (kind==="doc"){
+    const list=inMonth(data.appts);
+    const pages=Math.max(1,Math.ceil(list.length/LIMIT.doc));
+    for(let p=0;p<pages;p++){
+      const page=doc.addPage([612,792]); const {T,fit,wrap,P,line,box,center,fitLines,centerFit}=ctx(page);
+      center("Family Support for Children with Disabilities",306,74,12.5,B);
+      center("CONFIRMATION OF MEDICAL APPOINTMENT/HOSPITAL STAY FORM",306,117,11,B);
+      P("FSCD requires proof of attendance for reimbursing travel expenses for medical appointments. This form serves as a valid proof of service for all approved mileage, parking and meal costs associated with a visit. Separate receipts are required for any accommodation costs.",72,145,468,10,F,1.38);
+      P("Instruction: Please have a staff person date and sign the form below confirming your attendance and file with your other receipts, invoices and Statements of Expense (SOE) forms so that it is available upon request.",72,200,468,10,F,1.38);
+      T("CHILD'S NAME:",72,254,11,B); line(168,266,451,266,0.6);
+      T(st.childName,174,252,fit(st.childName,270,12,F),F,blue);
+      T("FSCD Child ID #:",72,283,10,F); line(167,294,449,294,0.6);
+      T(st.childId,174,281,fit(st.childId,270,12,F),F,blue);
+      T("Appointments attended for the month/year of:",72,311,10,F); line(312,322,474,322,0.6);
+      T(monthLabel(month),318,309,12,F,blue);
+      // table
+      const cols=[66,226,386,545], rows=[341,369,424,479,532,587,641,690];
+      rows.forEach((y,i)=>line(66,y,545,y,i===0||i===1?1:0.8)); cols.forEach(x=>line(x,341,x,690,1));
+      center("Name of Medical",146,345,10,F); center("Professional or Hospital",146,359,10,F);
+      center("Date and Time of",306,345,10,F); center("Appointment",306,359,10,F);
+      center("Signature from Medical",465,345,10,F); center("Office or Hospital",465,359,10,F);
+      list.slice(p*6,p*6+6).forEach((a,i)=>{
+        const top=rows[i+1]+5, boxH=rows[i+2]-rows[i+1]-9, bw=150;
+        // form asks for the NAME only (no address)
+        let ns=11, N;
+        for(;;){ N=fitLines(a.name,bw,3,ns,B,ns); const ok=N.lines.length*ns*1.2<=boxH && !N.lines.join("").endsWith("..."); if(ok||ns<=6) break; ns-=0.25; }
+        const nTop=top+Math.max(0,(boxH-N.lines.length*N.size*1.2)/2);
+        N.lines.forEach((l,k)=>T(l,71,nTop+k*N.size*1.2,N.size,B,blue));
+        const d=parseISO(a.date);
+        T(`${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,232,top+6,10,F,blue);
+        T(time12(a.time),232,top+20,10,F,blue);
+      });
+      if(pages>1) T(`Form ${p+1} of ${pages}`,470,705,8,F,gray);
+    }
+  }
+
+  if (kind==="resp"){
+    const allV=inMonth(data.visits); const nSh=Math.max(1,Math.ceil(allV.length/LIMIT.resp));
+    for(let sh=0;sh<nSh;sh++){
+    const list=allV.slice(sh*LIMIT.resp,(sh+1)*LIMIT.resp);
+    const page=doc.addPage([612,792]); const {T,fit,wrap,P,line,box,center,fitLines,centerFit}=ctx(page);
+    const L=36,R=576,W=R-L;
+    T("Record of Services Provided",L,30,16,B);
+    T("Family Support for Children with Disabilities Program",L,50,10,B);
+    let y=P("The information on this form is collected under the authority of the Financial Administration Act and will be used for the purpose of validating expenses and payments under the Family Support for Children with Disabilities (FSCD) Program. Personal information will be managed in accordance with the Freedom of Information and Protection of Privacy Act. Prior to submitting your statement, if you have any questions about the collection of this information, you may contact your FSCD worker.",L,66,W,6.3,F,1.25);
+    y=P("This form is used to record and verify the hours of work for individuals hired privately by a parent/guardian.",L,y+3,W,8,B,1.2)+4;
+    // Section 1
+    const s1=y; box(L,s1,W,34,0.9);
+    page.drawRectangle({x:L,y:792-s1-11,width:W,height:11,color:rgb(0.88,0.88,0.88)});
+    T("1. Child's Information",L+4,s1+2,8,B);
+    const [yy,mm]=month.split("-");
+    T("Month:",L+4,s1+18,8,B); T(MONTHS[+mm-1],L+34,s1+16,fit(MONTHS[+mm-1],66,10,F),F,blue); line(L+32,s1+28,L+102,s1+28,0.5);
+    T("Year:",L+108,s1+18,8,B); T(yy,L+132,s1+16,10,F,blue); line(L+130,s1+28,L+170,s1+28,0.5);
+    T("Child's Name:",L+178,s1+18,8,B); T(st.childName,L+234,s1+16,fit(st.childName,150,10,F),F,blue); line(L+232,s1+28,L+388,s1+28,0.5);
+    T("Child's File ID#:",L+394,s1+18,8,B); T(st.childId,L+462,s1+16,fit(st.childId,R-4-(L+462)-2,10,F),F,blue); line(L+460,s1+28,R-4,s1+28,0.5);
+    // Section 2
+    const s2=s1+40, w=st.worker; box(L,s2,W,58,0.9);
+    page.drawRectangle({x:L,y:792-s2-11,width:W,height:11,color:rgb(0.88,0.88,0.88)});
+    T("2. Privately Hired Individual's Information",L+4,s2+2,8,B);
+    T("Name:",L+4,s2+19,8,B); T(w.name,L+32,s2+17,fit(w.name,180,10,F),F,blue); line(L+30,s2+29,L+214,s2+29,0.5);
+    const yn=(x,yt,label1,label2,val)=>{ T(label1,x,yt,7,F); T(label2,x,yt+8,7,F);
+      const bx=x+90; box(bx,yt+1,8,8,0.6); T("Yes",bx+11,yt+1,7,F); box(bx+30,yt+1,8,8,0.6); T("No",bx+41,yt+1,7,F);
+      if(val==="Yes") T("X",bx+1.4,yt+1.2,8,B,blue); if(val==="No") T("X",bx+31.4,yt+1.2,8,B,blue); };
+    yn(L+222,s2+15,"Is the individual related","to the above named child?",w.related);
+    yn(L+378,s2+15,"Is the individual 16-17","years of age?",w.teen);
+    T("Address:",L+4,s2+41,8,B); T(w.address,L+42,s2+39,fit(w.address,214,10,F),F,blue); line(L+40,s2+51,L+260,s2+51,0.5);
+    T("Postal Code:",L+266,s2+41,8,B); T(w.postal,L+318,s2+39,fit(w.postal,60,10,F),F,blue); line(L+316,s2+51,L+380,s2+51,0.5);
+    T("Phone Number:",L+386,s2+41,8,B); T(w.phone,L+448,s2+39,fit(w.phone,86,10,F),F,blue); line(L+446,s2+51,R-4,s2+51,0.5);
+    // Section 3 table
+    const s3=s2+64;
+    page.drawRectangle({x:L,y:792-s3-11,width:W,height:11,color:rgb(0.88,0.88,0.88)}); box(L,s3,W,11,0.9);
+    T("3. Type of Service and Hours / Days Worked",L+4,s3+2,8,B);
+    const heads=[["Hourly","Respite"],["Work Related","Child Care"],["Domestic","Child Care"],["Home-","making"],["Sibling","Care"],["Community","Support","Aide"],["Personal","Care Aide","Support"],["Behavioural or","Developmental","Aide Support"],["24 hour","Respite","# of days"]];
+    const cw=[64,40,40]; const svcW=(W-cw.reduce((a,b)=>a+b,0))/9;
+    const xs=[L]; cw.forEach(c=>xs.push(xs[xs.length-1]+c)); for(let i=0;i<9;i++) xs.push(xs[xs.length-1]+svcW);
+    const hTop=s3+11, hH=30;
+    const sigBlock=138, notes=24, summary=3*12;
+    const avail=792-36-sigBlock-notes-summary-(hTop+hH);
+    const nRows=LIMIT.resp;
+    const rh=avail/nRows;
+    const tBottom=hTop+hH+nRows*rh;
+    // header cells
+    center("Date",L+cw[0]/2,hTop+6,7,B); center("(e.g. Wed. Jan. 24)",L+cw[0]/2,hTop+15,5.5,F);
+    center("Start",xs[1]+20,hTop+7,7,B); center("Time",xs[1]+20,hTop+15,7,B);
+    center("End",xs[2]+20,hTop+7,7,B); center("Time",xs[2]+20,hTop+15,7,B);
+    heads.forEach((h,i)=>{ const cx=xs[3+i]+svcW/2; h.forEach((t,k)=>center(t,cx,hTop+3+k*8,fit(t,svcW-3,6.2,B),B)); });
+    // grid
+    line(L,hTop,R,hTop,0.9); line(L,hTop+hH,R,hTop+hH,0.9);
+    for(let r=1;r<=nRows;r++) line(L,hTop+hH+r*rh,R,hTop+hH+r*rh,0.4);
+    // summary rows
+    const sTop=tBottom; const sumLabels=["Total hours / days","Wage per hr / day / week / month","Total Cost"];
+    for(let r=1;r<=3;r++) line(L,sTop+r*12,R,sTop+r*12,0.7);
+    sumLabels.forEach((s,i)=>T(s,L+4,sTop+i*12+3,7,B));
+    xs.forEach((x,i)=>line(x,hTop,x,(i===1||i===2)?tBottom:sTop+36,(i===0||i===xs.length-1)?0.9:0.5));
+    // fill rows
+    const cxOf=sv=>xs[3+Math.max(0,SERVICES.indexOf(sv))]+svcW/2;
+    const tot={};
+    list.forEach((v,i)=>{
+      const yt=hTop+hH+i*rh+(rh-7)/2, sv=svcOf(v), q=visitQty(v); tot[sv]=(tot[sv]||0)+q;
+      T(shortDate(v.date),L+3,yt,fit(shortDate(v.date),cw[0]-5,7,F),F,blue);
+      if(!isDaysSvc(sv)){ T(time12(v.start),xs[1]+2,yt,fit(time12(v.start),36,7,F),F,blue); T(time12(v.end),xs[2]+2,yt,fit(time12(v.end),36,7,F),F,blue); }
+      centerFit(fmtH(q),cxOf(sv),yt,svcW-4,7.5,F);
+    });
+    svcList().forEach(sv=>{ const cx=cxOf(sv), wg=wageOf(sv);
+      if(wg) center(money(wg)+"/"+unitOf(sv),cx,sTop+14.5,fit(money(wg)+"/"+unitOf(sv),svcW-3,7,F),F);
+      if(tot[sv]!==undefined){ centerFit(fmtH(tot[sv]),cx,sTop+2.5,svcW-4,7.5,B); if(wg) center(money(tot[sv]*wg),cx,sTop+26.5,fit(money(tot[sv]*wg),svcW-3,7.5,B),B); } });
+    // notes
+    let ny=sTop+36+3;
+    ny=P("With prior approval an adult relative may provide Hourly Respite or 24 Hour Respite.",L,ny,W,6.5,F,1.2);
+    ny=P("Hourly Respite, Work Related Child Care (for children 13 years of age or older), Homemaking and Community Support Aide may be provided by a 16-17 year old. All other services must be provided by an individual 18 years of age or older.",L,ny,W,6.5,F,1.2)+4;
+    // signatures
+    T("This form must be signed by the Privately Hired Individual and the Parent/Guardian.",L,ny,8,B); ny+=12;
+    ny=P("I acknowledge that I have provided the above service(s) and understand that the parent/guardian is responsible for payment to me. I acknowledge that the Family Support for Children with Disabilities Program is not responsible for direct payment to me.",L,ny,W,6.5,F,1.2)+16;
+    const sig=(yt,a,b,c,name)=>{ line(L,yt,L+200,yt,0.6); line(L+215,yt,L+300,yt,0.6); line(L+315,yt,R,yt,0.6);
+      T(a,L,yt+2,6.5,F); T(b,L+215,yt+2,6.5,F); T(c,L+315,yt+2,6.5,F); if(name) T(name,L+318,yt-11,fit(name,R-(L+318)-2,9.5,F),F,blue); };
+    sig(ny,"Signature of Privately Hired Individual","Date (yyyy/mm/dd)","Name of Privately Hired Individual (PRINT)",w.name); ny+=14;
+    ny=P("I acknowledge that the above services have been received and accept responsibility to pay the privately hired individual directly. I acknowledge that I am responsible for keeping this record for 10 years and that I may be asked to provide this completed form for verification and audit purposes. I acknowledge that the Family Support for Children with Disabilities program may contact the privately hired individual at any time to clarify or validate the information on this form, and I hereby give my consent to the privately hired individual to provide the requested information to the Family Support for Children with Disabilities program.",L,ny,W,6.5,F,1.2)+16;
+    sig(ny,"Signature of Parent/Guardian","Date (yyyy/mm/dd)","Name of Parent/Guardian (PRINT)",st.parentName);
+    T("Based on FSCD0003 (2017/06)"+(nSh>1?`   ·   Form ${sh+1} of ${nSh}`:""),L,777,6,I,gray);
+    }
+  }
+  if (kind==="trip"){
+    const list=tripsInMonth(); const rate=parseFloat(st.rate)||0;
+    const per=LIMIT.trip, pages=Math.max(1,Math.ceil(list.length/per));
+    const yellow=rgb(1,1,0);
+    const X=[43,130.5,309,487,665,733.5,802,870,964];
+    const top=101, hdrB=147, rh=20.3;
+
+    for(let p=0;p<pages;p++){
+      const page=doc.addPage([1008,612]); const {fit,wrap,fitLines}=ctx(page);
+      const Y=yt=>612-yt; // local for rects
+      const TT=(s,x,yt,size,font,color)=>page.drawText(clean(s),{x,y:612-yt-size*0.8,size,font,color:color||black});
+      const cen=(s,cx,yt,size,font,color,maxW=62)=>{ s=clean(s); const sz=fit(s,maxW,size,font); TT(s,cx-font.widthOfTextAtSize(s,sz)/2,yt+(size-sz)/2,sz,font,color); };
+      const ln=(x1,y1,x2,y2,th)=>page.drawLine({start:{x:x1,y:612-y1},end:{x:x2,y:612-y2},thickness:th||0.8,color:black});
+      cen("Mileage/ Parking Log",504,60,13,B,black,400);
+      const ylab=(txt,x1,x2)=>{ page.drawRectangle({x:x1,y:612-101,width:x2-x1,height:20,color:yellow}); cen(txt,(x1+x2)/2,86,9,B,black,x2-x1-4); };
+      ylab("Child's Name:",43,130.5); ylab("Month:",665,733.5); ylab("Year:",802,870);
+      TT(st.childName,136,85,fit(st.childName,320,11,F),F,blue);
+      const [yy,mm]=month.split("-"); TT(MONTHS[+mm-1],738,85,fit(MONTHS[+mm-1],62,11,F),F,blue); TT(yy,875,85,11,F,blue);
+      // grid
+      const bottom=hdrB+per*rh+rh;
+      ln(43,top,964,top,1.6); ln(43,hdrB,964,hdrB,1.2);
+      for(let r=1;r<=per;r++) ln(43,hdrB+r*rh,964,hdrB+r*rh,0.6);
+      ln(43,bottom,964,bottom,1.6);
+      X.forEach((x,i)=>ln(x,top,x,bottom,(i===0||i===X.length-1)?1.6:0.8));
+      const H=[["Date",""],["Purpose of Trip","IE: appt, ACH, etc."],["From","(Address)"],["To","(Address)"],["Mileage","(KMs)"],["Rate","($"+rate.toFixed(2)+")"],["Total","Mileage"],["Parking Cost","(receipt required)"]];
+      H.forEach((h,i)=>{ const cx=(X[i]+X[i+1])/2, mw=X[i+1]-X[i]-4; if(i===0){ cen(h[0],cx,119,9,B,black,mw); return; } cen(h[0],cx,111,9,B,black,mw); cen(h[1],cx,125,8.5,(i===1)?B:F,black,mw); });
+      const rows=list.slice(p*per,p*per+per);
+      const totKm=rows.reduce((a,t)=>a+(+t.km||0),0), totPark=rows.reduce((a,t)=>a+(+t.parking||0),0);
+      rows.forEach((t,i)=>{
+        const yt=hdrB+i*rh;
+        const cell=(txt,ci,size=7.5,font=F)=>{ const w=X[ci+1]-X[ci]-6; const R2=fitLines(txt,w,2,size,font,4.5); const sz=R2.size, Lz=R2.lines; const off=Lz.length===1?(rh-sz)/2:(rh-2*sz*1.15)/2; Lz.forEach((l,k)=>TT(l,X[ci]+3,yt+off+k*sz*1.15,sz,font,blue)); };
+        const d=parseISO(t.date);
+        cell(`${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,0,8);
+        cell(t.purpose||"",1);
+        cell(t.from||"",2);
+        { const full=[t.toName&&t.toName!==t.to?t.toName:"",t.to||""].filter(Boolean).join(", "); const chk=fitLines(full,X[4]-X[3]-6,2,7.5,F,4.5);
+          cell(chk.lines.join(" ").endsWith("...")?(t.to||t.toName||""):full,3); }
+        const km=+t.km||0, park=+t.parking||0;
+        cen(t.km?fmtH(km):"",(X[4]+X[5])/2,yt+6,8.5,F,blue);
+        cen("$"+rate.toFixed(2),(X[5]+X[6])/2,yt+6,8.5,F,blue);
+        cen(t.km?money(km*rate):"",(X[6]+X[7])/2,yt+6,8.5,F,blue);
+        cen(park?money(park):"",(X[7]+X[8])/2,yt+6,8.5,F,blue);
+      });
+      const gy=hdrB+per*rh;
+      page.drawRectangle({x:X[5]+0.8,y:612-gy-rh+0.8,width:X[6]-X[5]-1.6,height:rh-1.6,color:yellow});
+      cen("Grand Totals:",(X[5]+X[6])/2,gy+6,8.5,B);
+      {
+        cen(fmtH(totKm)+" km",(X[4]+X[5])/2,gy+6,8.5,B,blue);
+        cen(money(totKm*rate),(X[6]+X[7])/2,gy+6,8.5,B,blue);
+        cen(money(totPark),(X[7]+X[8])/2,gy+6,8.5,B,blue);
+      }
+      if(pages>1) TT(`Form ${p+1} of ${pages}`,900,560,8,F,gray);
+    }
+  }
+
+  if (kind==="triple"){
+    const D=data.triple;
+    let page=doc.addPage([612,792]); let c=ctx(page);
+    const L=50, W=512;
+    const field=(label,val,yt,x=L,w=W,lab=9)=>{ c.T(label,x,yt,lab,B); const lw=B.widthOfTextAtSize(clean(label),lab)+5; c.line(x+lw,yt+11,x+w,yt+11,0.4);
+      const R2=c.fitLines(val||"",w-lw-4,1,10,F,4.5); if(R2.lines[0]) c.T(R2.lines[0],x+lw+2,yt-1+(10-R2.size)*0.6,R2.size,F,blue); return yt+20; };
+    const block=(label,val,yt,lines=3)=>{ let y=c.P(label,L,yt,W,9,B,1.3)+2; if(!lines) return y+8;
+      const R2=c.fitLines(val||"",W-6,lines,10,F,5.5);
+      for(let i=0;i<lines;i++) c.line(L,y+12+i*15,L+W,y+12+i*15,0.4);
+      R2.lines.forEach((l,i)=>c.T(l,L+3,y+i*15+(10-R2.size)*0.6,R2.size,F,blue));
+      return y+lines*15+8; };
+    const radio=(x,yt,label,on)=>{ c.T("( "+(on?"X":"  ")+" ) "+label,x,yt,9.5,on?B:F,on?blue:black); };
+    c.T("Family Support for Children with Disabilities (FSCD)",L,40,12,B);
+    c.T("Family Support Services",L,56,11,B);
+    c.T("Provincial Triple P Referral Form",L,72,11,B);
+    c.T("Please complete this form and email it to the Triple P email for your area:",L,96,9,F);
+    c.T("Red Deer and Central Alberta:  "+TP_EMAIL,L,110,9,B);
+    const today=new Date();
+    let y=134;
+    y=field("Date of referral (Month/Day/Year):",`${pad(today.getMonth()+1)} / ${pad(today.getDate())} / ${today.getFullYear()}`,y);
+    y=field("FSCD child ID number (if known):",D.childId,y);
+    y=field("Caseworker's name (if known):",D.caseName,y);
+    y=field("Caseworker's email (if known):",D.caseEmail,y);
+    y+=6;
+    field("Your name:",D.parentName,y,L,300); y=field("Your phone number:",D.phone,y,L+312,200);
+    y=field("Relationship to child:",D.relation,y);
+    let age=""; if(D.childDob){ const b=parseISO(D.childDob); let a=today.getFullYear()-b.getFullYear(); if(today<new Date(today.getFullYear(),b.getMonth(),b.getDate())) a--; age=String(a); }
+    field("Child's age:",age,y,L,150); y=field("Your email address:",D.email,y,L+162,350);
+    y=field("Child's date of birth:",D.childDob?(()=>{const b=parseISO(D.childDob);return `${MONTHS[b.getMonth()]} ${b.getDate()}, ${b.getFullYear()}`;})():"",y);
+    c.T("Child's name (use \"quotes\" for a preferred \"name\")",L,y,9,B); y+=16;
+    field("First Name:",D.childFirst,y,L,165); field("Middle Name:",D.childMiddle,y,L+172,165); y=field("Last Name:",D.childLast,y,L+344,168);
+    y=block("Child's disability or diagnosis:",D.diagnosis,y,2);
+    y=block("When are you available for sessions? If evening, please specify after what time.",D.when,y,2);
+    y+=4;
+    const cons="As parent/ guardian of this child, I consent to the Triple P coordination team releasing information to accredited Triple P practitioners for the purposes of obtaining Triple P services.";
+    c.T("( "+(D.consent?"X":"  ")+" )",L,y,9.5,B,blue); y=c.P(cons,L+28,y,W-28,9,F,1.3)+22;
+    c.line(L+250,y,L+W,y,0.6); c.T("(sign and date)",L+250,y+3,8,I,gray); y+=18;
+    c.T("Please continue to the next section below.",L,y,9,I);
+    page=doc.addPage([612,792]); c=ctx(page); y=50;
+    y=field("Name of second parent/guardian (if applicable):",D.second,y);
+    y=field("Relationship to child:",D.secondRel,y);
+    y=block("Full address or addresses of parent(s)/guardian(s) (street address, city/town, & postal code):","",y,0);
+    y=field("Address 01:",D.address,y-6);
+    y=field("Address 02 (if applicable):","",y);
+    c.T("Mailing address or addresses, if different from above:",L,y,9,B); y+=16;
+    y=field("Mailing address 01:","",y);
+    y=field("Mailing address 02 (if applicable):","",y);
+    y=field("Second parent/guardian phone number (if applicable):",D.secondPhone,y);
+    y=field("Second parent/guardian email address (if applicable):",D.secondEmail,y);
+    y=field("Preferred language(s), other than English:",D.language,y);
+    c.T("Do you require language assistance to go through the Triple P program (yes or no)?",L,y,9,B);
+    radio(L+400,y,"Yes",D.langHelp==="Yes"); radio(L+455,y,"No",D.langHelp==="No"); y+=22;
+    y=block("Reason for referral (challenges/areas of concern/specific outcomes or goal areas you would like to reach):",D.reason,y,4);
+    c.T("Do you prefer to receive Triple P virtually over an on-line platform, in-person or in a group setting?",L,y,9,B); y+=16;
+    radio(L,y,"Virtually",D.how==="Virtually"); radio(L+110,y,"In-person",D.how==="In-person"); radio(L+220,y,"Group setting",D.how==="Group setting"); y+=24;
+    y=block("Please provide any further information for the Triple P Practitioner (such as about the child's siblings/others living in your home, if you have done any Triple P previously, if so which program):",D.more,y,4);
+    c.T("Classification: Protected A",L,765,7,F,gray);
+  }
+
+  doc.setTitle({doc:"Confirmation of Medical Appointment",resp:"Record of Services Provided",trip:"Mileage and Parking Log",triple:"Triple P Referral Form"}[kind]);
+  return await doc.save();
+}
+
+/* ---------- print / share ---------- */
+let ready=null;
+async function makeForm(kind){
+  const st=data.settings;
+  if(kind!=="triple" && (!st.childName||!st.childId)){ toast("⚙️ Fill in the child's name and ID first"); go("setup"); return; }
+  if(kind==="resp" && !inMonth(data.visits).length){ toast("➕ Add a visit first"); return; }
+  if(kind==="trip" && !tripsInMonth().length){ toast("➕ Add a trip first"); return; }
+  openSheet(`<div class="ready"><span class="em">⏳</span>Making form…</div>`);
+  try{
+    const bytes=await buildPDF(kind);
+    const [y,m]=month.split("-");
+    const name = kind==="triple" ? "Triple P Referral.pdf" : ({doc:"Medical Appointments",resp:"Respite Record",trip:"Mileage Log"}[kind])+` ${MONTHS[+m-1]} ${y}.pdf`;
+    ready={bytes,name,kind,summary:summaryText(kind),steps:FORM_STEPS[kind],hint:FORM_HINT[kind]};
+    openReady();
+
+  }catch(e){
+    openSheet(`<div class="warn">${e.message==="nolib"?"📶 Couldn't load. Check the internet connection and try again.":"Something went wrong making the form."}</div><button class="big ghost" data-close>Close</button>`);
+  }
+}
+async function shareReady(){
+  if(!ready) return;
+  const file=new File([ready.bytes],ready.name,{type:"application/pdf"});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:ready.name}); return; }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  try{
+    if(window.claude && window.claude.use){ const dl=await window.claude.use("downloads"); if(dl){ await dl.save({filename:ready.name,data:new Blob([ready.bytes],{type:"application/pdf"})}); return; } }
+  }catch(e){}
+  saveOnly();
+}
+function summaryText(kind){
+  const st=data.settings, ml=monthLabel(month);
+  if(kind==="doc"){ const l=inMonth(data.appts); const X=apptExtras(l); return `Medical appointments - ${ml}\n${l.length} appointment(s):\n`+l.map(a=>`- ${shortDate(a.date)} ${time12(a.time)} - ${a.name}`+(a.long?` (8 h+ trip${+a.meals?`, meals ${money(+a.meals)}`:""}${+a.hotel?`, hotel ${money(+a.hotel)}`:""})`:"")).join("\n")+(X.meals||X.hotel?`\nMeals ${money(X.meals)} + hotel ${money(X.hotel)}`:""); }
+  if(kind==="resp"){ const l=inMonth(data.visits); const lines=svcList().map(sv=>{ const vs=l.filter(v=>svcOf(v)===sv); if(!vs.length) return ""; const q=vs.reduce((a,v)=>a+visitQty(v),0); return `${sv}: ${vs.length} visit(s), ${fmtH(q)} ${isDaysSvc(sv)?"days":"hours"}`+(wageOf(sv)?`, ${money(q*wageOf(sv))}`:""); }).filter(Boolean);
+    return `Respite - ${ml}\nWorker: ${st.worker.name}\n${lines.join("\n")}\nTotal: ${money(respTotals(l).cost)}`; }
+  if(kind==="trip"){ const l=tripsInMonth(); const km=l.reduce((s,t)=>s+(+t.km||0),0), pk=parkClaim(l), r=parseFloat(st.rate)||0;
+    return `Trips - ${ml}\n${l.length} trip(s), ${fmtH(km)} km\nMileage ${money(km*r)} + parking ${money(pk)} = ${money(km*r+pk)}`; }
+  return "Triple P referral form";
+}
+async function emailReady(){
+  if(!ready) return;
+  const st=data.settings;
+  const file=new File([ready.bytes],ready.name,{type:"application/pdf"});
+  const text=ready.summary+"\n\nForm attached.";
+  if(st.email && navigator.clipboard){ navigator.clipboard.writeText(st.email).catch(()=>{}); }
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      if(st.email) toast("✉️ Pick Mail · paste your email in To");
+      await navigator.share({files:[file],title:ready.name.replace(/\.pdf$/,""),text});
+      return;
+    }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  // fallback (PC, or a page that blocks sharing): save the PDF, copy the message, send from your own email
+  const subj=ready.name.replace(/\.pdf$/,"");
+  const mailto=`mailto:${encodeURIComponent(st.email||"")}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(text)}`;
+  openSheet(`
+    <h2>📧 Email it</h2>
+    <div class="info" style="background:#fff"><span class="em">1️⃣</span><div><b>Save the PDF</b>So you can attach it.</div></div>
+    <button class="big ghost" id="fbSave" style="margin-top:0"><span class="em">💾</span>Save PDF</button>
+    <div class="info" style="background:#fff;margin-top:12px"><span class="em">2️⃣</span><div><b>Copy the message</b>Subject and summary, ready to paste.</div></div>
+    <button class="big ghost" id="fbCopy" style="margin-top:0"><span class="em">📋</span>Copy message</button>
+    <div class="info" style="background:#fff;margin-top:12px"><span class="em">3️⃣</span><div><b>Open your email</b>Paste, attach the PDF, send${st.email?` to <span style="word-break:break-all">${esc(st.email)}</span>`:""}.</div></div>
+    <a class="big trip" style="text-decoration:none" href="${mailto}" target="_blank" rel="noopener"><span class="em">✉️</span>Open email</a>
+    ${st.email?"":`<div class="hint" style="text-align:center;margin-top:8px">Tip: add your email in ⚙️ Setup</div>`}
+    <button class="big ghost" data-close>Close</button>`);
+  $("#fbSave").onclick=()=>saveOnly();
+  $("#fbCopy").onclick=()=>{ const msg=`${st.email?"To: "+st.email+"\n":""}Subject: ${subj}\n\n${text}`;
+    (navigator.clipboard?navigator.clipboard.writeText(msg):Promise.reject()).then(()=>toast("📋 Copied · paste it in your email"),()=>{ openSheet(`<h2>📋 Copy this</h2><textarea rows="8" style="font-size:16px">${esc(msg)}</textarea><button class="big ghost" data-close>Close</button>`); }); };
+}
+// save the PDF without the share menu (works on PC and in the Claude page)
+async function saveOnly(){
+  if(!ready) return;
+  const blob=new Blob([ready.bytes],{type:"application/pdf"});
+  try{ if(window.claude && window.claude.use){ const dl=await window.claude.use("downloads"); if(dl){ await dl.save({filename:ready.name,data:blob}); toast("💾 Saved"); return; } } }catch(e){}
+  try{ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=ready.name; document.body.appendChild(a); a.click(); a.remove(); toast("💾 Saved to Downloads"); }catch(e){ toast("Couldn't save. Try Print / Save."); }
+}
+function loadScript(src){ return new Promise((res,rej)=>{ const t=document.createElement("script"); t.src=src; t.onload=res; t.onerror=rej; document.head.appendChild(t); }); }
+let pdfjsReady=null;
+function loadPdfJs(){
+  if(!pdfjsReady){
+    const base="lib/";
+    // worker code runs on the page itself (no separate worker needed)
+    pdfjsReady=loadScript(base+"pdf.worker.min.js").then(()=>loadScript(base+"pdf.min.js")).then(()=>window.pdfjsLib);
+  }
+  return pdfjsReady;
+}
+async function openReady(){
+  if(!ready) return;
+  const r=ready;
+  openSheet(`
+    <h2>👀 ${esc(r.name.replace(/\.pdf$/,""))}</h2>
+    ${r.steps?`<div class="ready" style="padding:12px;margin-bottom:12px"><div class="steps" style="margin:2px 0">${r.steps}</div><div class="hint" style="font-size:17px">${esc(r.hint)}</div></div>`:""}
+    <div id="pv" style="display:grid;gap:12px"><div class="ready"><span class="em">⏳</span>Loading…</div></div>
+    <button class="big ${r.kind==="triple"?"trip":r.kind}" id="pvShare"><span class="em">🖨️</span>Print / Save</button>
+    <button class="big ghost" id="pvEmail"><span class="em">📧</span>Email to me</button>
+    <button class="big ghost" data-close>Close</button>`);
+  $("#pvShare").onclick=()=>shareReady();
+  $("#pvEmail").onclick=()=>emailReady();
+  const pv=$("#pv");
+  try{
+    const lib=await loadPdfJs();
+    const pdf=await lib.getDocument({data:r.bytes.slice(0)}).promise;
+    pv.innerHTML="";
+    const width=pv.clientWidth||340;
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const v1=page.getViewport({scale:1});
+      const scale=(width/v1.width)*Math.min(2.5,(window.devicePixelRatio||1)*1.5);
+      const vp=page.getViewport({scale});
+      const c=document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+      c.style.cssText="width:100%;height:auto;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.12)";
+      pv.appendChild(c);
+      await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+    }
+  }catch(e){
+    pv.innerHTML=`<div class="warn">📶 Couldn't show the preview. Check the internet connection, or use Print / Save.</div>`;
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e=>{
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.go){ go(t.dataset.go); return; }
+  if(t.dataset.faqcat!==undefined){ faqCat=t.dataset.faqcat||null; faqOpen=null; const b=$("#faqQ"); if(b) b.value=""; render(); window.scrollTo(0,0); return; }
+  if(t.dataset.faq){ faqOpen=faqOpen===t.dataset.faq?null:t.dataset.faq; if(window.speechSynthesis) speechSynthesis.cancel(); render(); const el=document.querySelector(`[data-faq="${faqOpen}"]`); if(el) el.scrollIntoView({block:"nearest",behavior:"smooth"}); return; }
+  if(t.dataset.say){ faqSay(t.dataset.say); return; }
+  if(t.dataset.page){ faqPage(t.dataset.page); return; }
+  if(t.dataset.href){ location.href=t.dataset.href; return; }
+  if(t.hasAttribute("data-close")){ closeSheet(); return; }
+  if(t.dataset.delAppt){ const id=t.dataset.delAppt; confirmSheet("🗑️ Delete this appointment?",()=>{ data.appts=data.appts.filter(a=>a.id!==id); save(); }); return; }
+  if(t.dataset.delVisit){ const id=t.dataset.delVisit; confirmSheet("🗑️ Delete this visit?",()=>{ data.visits=data.visits.filter(a=>a.id!==id); save(); }); return; }
+  if(t.dataset.delClinic){ data.settings.clinics=data.settings.clinics.filter(c=>c.id!==t.dataset.delClinic); save(); render(); return; }
+  if(t.dataset.preview){ previewForm(t.dataset.preview); return; }
+  if(t.dataset.editAppt){ addApptSheet(t.dataset.editAppt); return; }
+  if(t.dataset.editVisit){ addVisitSheet(t.dataset.editVisit); return; }
+  if(t.dataset.editTrip){ editTripSheet(t.dataset.editTrip); return; }
+  if(t.dataset.check){ data.checks[t.dataset.check]=!data.checks[t.dataset.check]; save(); render(); return; }
+  if(t.dataset.wchip!==undefined){ const steps=wizSteps(); data.triple[steps[wiz].k]=t.dataset.wchip; save(); render(); return; }
+  if(t.dataset.svc){ const sv=t.dataset.svc; let L=svcList().slice(); if(L.includes(sv)){ if(L.length===1){ toast("Keep at least one"); return; } L=L.filter(x=>x!==sv); } else L=SERVICES.filter(x=>L.includes(x)||x===sv); data.settings.services=L; data.settings.service=L[0]; save(); render(); return; }
+  if(t.dataset.tsize){ data.settings.textSize=t.dataset.tsize; save(); applyTextSize(); render(); return; }
+  if(t.dataset.seg){ data.settings.worker[t.dataset.seg]=t.dataset.v; save(); render(); return; }
+  switch(t.dataset.act){
+    case "prev": month=shiftMonth(month,-1); render(); break;
+    case "next": month=shiftMonth(month,1); render(); break;
+    case "fix-missing": go("setup"); setTimeout(()=>{ const el=document.querySelector(".need,.needcard"); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); },120); break;
+    case "add-appt": addApptSheet(); break;
+    case "add-visit": addVisitSheet(); break;
+    case "print-doc": makeForm("doc"); break;
+    case "save-photos-doc": savePhotos(inMonth(data.appts)); break;
+    case "save-photos-trip": savePhotos(tripsInMonth()); break;
+    case "print-resp": makeForm("resp"); break;
+    case "print-trip": makeForm("trip"); break;
+    case "print-triple": makeForm("triple"); break;
+    case "add-trip": addTripSheet(); break;
+    case "bank-help": bankHelp(); break;
+    case "wiz-next": wizNext(); break;
+    case "wiz-back": wiz=Math.max(0,wiz-1); render(); break;
+    case "wiz-restart": wiz=0; render(); break;
+    case "copy-tp": navigator.clipboard.writeText(TP_EMAIL).then(()=>toast("📋 Copied"),()=>toast(TP_EMAIL)); break;
+    case "start": data.running={date:todayISO(),start:nowHM()}; save(); month=todayISO().slice(0,7); render(); toast("▶️ Started"); break;
+    case "stop": { const r=data.running; if(r){ data.visits.push({id:uid(),date:r.date,start:r.start,end:nowHM()}); data.running=null; save(); month=r.date.slice(0,7); render(); toast("✅ Saved"); } break; }
+    case "cancel-run": data.running=null; save(); render(); break;
+    case "add-clinic": { const n=$("#cName").value.trim(), a=$("#cAddr").value.trim(); if(!n){ toast("Type the doctor or hospital"); return; } data.settings.clinics.push({id:uid(),name:n,address:a,km:($("#cKm").value||"").trim()}); save(); render(); toast("✅ Added"); break; }
+    case "go-backup": go("setup"); setTimeout(()=>{ const el=document.querySelector('[data-act="backup"]'); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); },120); break;
+    case "backup": { data.settings.lastBackup=todayISO(); const code=btoa(unescape(encodeURIComponent(JSON.stringify(data)))); navigator.clipboard.writeText(code).then(()=>{ save(); toast("📋 Copied. Paste into Notes."); },()=>{ $("#restoreBox").value=code; toast("Copy the code in the box"); }); break; }
+    case "restore": { try{ const d=JSON.parse(decodeURIComponent(escape(atob($("#restoreBox").value.replace(/\s+/g,""))))); if(!d.settings) throw 0;
+        const doIt=()=>{ data=normalize(d); save(); closeSheet(); render(); toast("♻️ Restored"); };
+        if(entryCount()){ openSheet(`<h2>♻️ Replace what's on this phone?</h2><div class="hint" style="font-size:17px;margin-bottom:6px">The ${entryCount()} entries here now will be swapped for the backup.</div><button class="big blue" id="yesRestore"><span class="em">♻️</span>Restore</button><button class="big ghost" data-close>Keep</button>`); $("#yesRestore").onclick=doIt; }
+        else doIt();
+      }catch(err){ toast("That code didn't work"); } break; }
+  }
+});
+document.addEventListener("input", e=>{
+  const el=e.target;
+  if(el.dataset.f){ data.settings[el.dataset.f]=el.value; save(); if(el.dataset.f==="service") render(); }
+  if(el.hasAttribute("data-req")) el.classList.toggle("need",!el.value.trim());
+  if(el.dataset.wage){ data.settings.wages=data.settings.wages||{}; data.settings.wages[el.dataset.wage]=el.value; save(); }
+  if(el.dataset.w){ data.settings.worker[el.dataset.w]=el.value; save(); }
+});
+
+
+render(); iconize(document.body);
+// ask the phone not to clear this app's data, and keep a copy of the app for when there's no signal
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+try{ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost") && window.top===window) navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
+window.__test = { go, data:()=>data, setData:d=>{data=normalize(d);save();render();}, setMonth:m=>{month=m;render();}, buildPDF, faq:FAQ, loadPdfJs };
+})();
+</script>
+</body>
+</html>
