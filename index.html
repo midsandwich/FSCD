@@ -807,14 +807,15 @@ function taShow(inp){ const ids=inp.id==="nName"?["nAddr","nKm"]:["cAddr","cKm"]
   const m=taMatches(inp.value); if(!m.length){ box.remove(); return; }
   if(inp.id==="nName") sheetShow(inp);
   box.innerHTML=`<div class="tah">👆 Tap to fill in</div>`+m.map((f,i)=>`<button type="button" data-ta="${i}"><span class="em">${f.em}</span><span>${esc(f.n)}${f.sp?`<span class="tsp"><b>${esc(f.sp)}</b>${f.city?` ${esc(f.city)}`:""}</span>`:""}<small>${f.sub?esc(f.sub)+"<br>":""}${esc(f.a)}</small></span></button>`).join("")+(taMatches.more?`<div class="tah" style="text-align:center">🔍 ${taMatches.more} more · type more of the name</div>`:"");
-  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
+  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse") e.preventDefault(); }));
+  box.querySelectorAll("[data-ta]").forEach(b=>b.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); const f=m[+b.dataset.ta];
     inp.value=f.fill||f.n; const a=$("#"+ids[0]); if(a){ a.value=f.a; a.classList.remove("need"); } const k=$("#"+ids[1]); if(k) k.value=f.km||"";
     inp.classList.remove("need"); box.remove(); if(k&&!k.value){ k.focus({preventScroll:true}); setTimeout(()=>sheetShow(inp),60); } else { inp.blur(); setTimeout(()=>sheetShow(inp),60); } toast("✅ Filled in"); }));
 }
 document.addEventListener("input",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")){ const a=$(t.id==="nName"?"#nAddr":"#cAddr"); if(a) a.value=""; taShow(t); } });
 document.addEventListener("focusin",e=>{ const t=e.target; if(t&&t.id==="nName"){ [60,350,700].forEach(ms=>setTimeout(()=>{ fitToScreen(); if(document.activeElement===t) sheetShow(t); },ms)); }
   if(t&&(t.id==="nName"||t.id==="cName")) loadABD(); if(t&&t.id==="nName"&&!t.value.trim()) taShow(t); });
-document.addEventListener("focusout",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) setTimeout(()=>{ const b=t.nextElementSibling; if(b&&b.classList.contains("ta")&&document.activeElement!==t) b.remove(); },250); });
+document.addEventListener("focusout",e=>{ const t=e.target; if(t&&(t.id==="nName"||t.id==="cName")) setTimeout(()=>{ const b=t.nextElementSibling; if(b&&b.classList.contains("ta")&&document.activeElement!==t) b.remove(); },450); });
 function suggestInput(el,title,getItems,onPick,newLabel){
   if(!el) return;
   el.addEventListener("pointerdown",e=>{
