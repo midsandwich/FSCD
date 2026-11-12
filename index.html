@@ -441,7 +441,7 @@ function iconize(root){
 new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(x=>iconize(x)); if(m.type==="characterData") iconize(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
 
 /* ---------- helpers ---------- */
-const APP_VERSION="Nov 11, 2026 · 7:30 PM"; // change this on every update, so the phone shows which version it has
+const APP_VERSION="Nov 11, 2026 · 7:45 PM"; // change this on every update, so the phone shows which version it has
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -1253,8 +1253,8 @@ function a2hsCard(){ if(STANDALONE||IN_FRAME||!IS_PHONE) return ""; const l=data
 function a2hsSheet(){ const n=entryCount();
   const steps=IS_IOS?["Tap Share 📤 in the browser","Tap “Add to Home Screen”","Open the app from the new icon"]:["Tap the ⋮ menu in the browser","Tap “Add to Home screen”","Open the app from the new icon"];
   openSheet(`<h2>📲 Add to Home Screen</h2>
-    <div class="hint" style="font-size:18px;margin-bottom:10px">In a browser tab, the phone can erase your records after a week. From the Home Screen, they stay.</div>
-    ${n?`<div class="warn" style="font-size:17px">⚠️ The new app starts empty. Save a backup file first, then restore it in the new app (Setup).</div><button class="big ghost" id="a2Backup"><span class="em">💾</span>Save backup file</button>`:""}
+    <div class="hint" style="font-size:18px;margin-bottom:10px">${IS_IOS?"In a browser tab, the phone can erase your records after a week. From the Home Screen, they stay.":"From the Home Screen, the app opens full screen and your records are safer."}</div>
+    ${n&&IS_IOS?`<div class="warn" style="font-size:17px">⚠️ The new app starts empty. Save a backup file first, then restore it in the new app (Setup).</div><button class="big ghost" id="a2Backup"><span class="em">💾</span>Save backup file</button>`:""}
     ${steps.map((t,i)=>`<div class="hstep"><span>${i+1}️⃣</span><span>${t}</span></div>`).join("")}
     ${IS_IOS?`<div class="hint" style="font-size:16px;text-align:center">Works best in Safari</div>`:""}
     <button class="big blue" data-close><span class="em">👍</span>OK</button><button class="big ghost" id="a2Later">Remind me next week</button>`);
