@@ -326,6 +326,9 @@ html.xl .minis{grid-template-columns:1fr 1fr 1fr}
 .ta button small{display:block;font-size:15px;font-weight:500;color:var(--muted);margin-top:2px}
 .ta .tsp{display:block;margin-top:4px;font-size:16px;font-weight:600;color:var(--ink)}
 .ta .tsp b{display:inline-block;background:var(--blue-soft);color:var(--blue);border-radius:9px;padding:2px 9px;margin-right:4px;font-weight:750}
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9;display:none;align-items:center;justify-content:center;gap:10px;background:var(--blue);color:#fff;border-radius:18px;padding:16px;font-size:19px;font-weight:750;box-shadow:0 6px 20px rgba(16,24,40,.25)}
+.hstep{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:16px;padding:14px;margin-bottom:8px;font-size:19px;font-weight:650;box-shadow:var(--shadow)}
+.old summary{font-size:16px;color:var(--muted);padding:10px 2px;cursor:pointer}
 .msheets{margin:10px 0 6px}
 .msheet{background:var(--card);border-radius:18px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
 .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:18px}
@@ -355,6 +358,7 @@ html.xl .minis{grid-template-columns:1fr 1fr 1fr}
 <div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
 <div class="pop-bg" id="popBg"><div class="pop" id="pop"></div></div>
 <div class="toast" id="toast"></div>
+<button class="updbar" id="updBar" data-act="update-now">🔄 New version · Tap to update</button>
 
 <script>
 (() => {
@@ -411,6 +415,10 @@ Object.assign(ICONS,{
  "✈":'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
  "💬":'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
  "🤷":'<circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 9h.01"/><path d="M15 9h.01"/>',
+ "📤":'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/>',
+ "🔄":'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+ "📂":'<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+ "📲":'<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
  "🖼":'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'
 });
 const ICON_KEYS=Object.keys(ICONS).sort((a,b)=>b.length-a.length);
@@ -433,7 +441,7 @@ function iconize(root){
 new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(x=>iconize(x)); if(m.type==="characterData") iconize(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
 
 /* ---------- helpers ---------- */
-const APP_VERSION="Nov 11, 2026 · 7:15 PM"; // change this on every update, so the phone shows which version it has
+const APP_VERSION="Nov 11, 2026 · 7:30 PM"; // change this on every update, so the phone shows which version it has
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -513,6 +521,7 @@ function renderInner(){
         <button class="tile resp" data-go="resp"><span class="em">🧑‍🤝‍🧑</span><span><div class="t">Respite</div><div class="s">${homeLine("resp")}</div></span></button>
         <button class="tile trip" data-go="trip"><span class="em">🚗</span><span><div class="t">Trips</div><div class="s">${homeLine("trip")}</div></span></button>
       </div>
+      ${a2hsCard()}
       ${backupCard()}
       <div class="minis">
         <button class="mini" data-go="check"><span class="em">✅</span>To do${todoLeft()?`<span class="dot">${todoLeft()}</span>`:""}</button>
@@ -639,10 +648,17 @@ function renderInner(){
       <div class="card"><h3>🔍 Text size</h3>
         <div class="seg"><button data-tsize="L" class="${(st.textSize||"L")==="L"?"on":""}">Large</button><button data-tsize="XL" class="${st.textSize==="XL"?"on":""}" style="font-size:23px">Extra large</button></div>
       </div>
-      <div class="card"><h3>💾 Backup</h3><div class="hint">Copy a backup code and keep it in Notes. Paste it here to restore.</div>
-        <button class="big ghost" data-act="backup" style="min-height:58px;font-size:20px;background:var(--bg)">📋 Copy backup code</button>
-        <textarea id="restoreBox" rows="3" placeholder="Paste backup code here" style="margin-top:12px;font-size:15px"></textarea>
-        <button class="big ghost" data-act="restore" style="min-height:58px;font-size:20px;background:var(--bg)">♻️ Restore</button>
+      <div class="card"><h3>💾 Backup</h3><div class="hint">Save a backup file to Files or iCloud. It keeps everything, with receipt photos.</div>
+        <button class="big ghost" data-act="backup-file" style="min-height:58px;font-size:20px;background:var(--bg)">💾 Save backup file</button>
+        <button class="big ghost" data-act="restore-file" style="min-height:58px;font-size:20px;background:var(--bg)">📂 Restore from a file</button>
+        <details class="old"><summary>Backup code (old way, no photos)</summary>
+          <button class="big ghost" data-act="backup" style="min-height:58px;font-size:20px;background:var(--bg)">📋 Copy backup code</button>
+          <textarea id="restoreBox" rows="3" placeholder="Paste backup code here" style="margin-top:12px;font-size:15px"></textarea>
+          <button class="big ghost" data-act="restore" style="min-height:58px;font-size:20px;background:var(--bg)">♻️ Restore</button>
+        </details>
+      </div>
+      <div class="card"><h3>🗂️ Records</h3><div class="hint">All of a year's forms and receipt photos in one PDF. Keep it 7 years.</div>
+        <button class="big ghost" data-act="year-file" style="min-height:58px;font-size:20px;background:var(--bg)">🗂️ Save a year's forms</button>
       </div>
       <button class="big blue" data-go="home"><span class="em">✅</span>Done</button>
       <div class="hint" style="text-align:center;margin-top:14px">Version ${APP_VERSION}</div>`;
@@ -1161,6 +1177,101 @@ async function savePhotos(list){
   else files.forEach(f=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); });
 }
 setTimeout(photoGC,4000);
+
+/* ---------- a file to save (backup file, year records) ---------- */
+function fileReady(file,title,hint,after){
+  openSheet(`<h2>${title}</h2><div class="ready" style="margin-bottom:12px"><span class="em">✅</span><b>${esc(file.name)}</b><div class="hint" style="font-size:17px;margin-top:6px">${hint}</div></div>
+    <button class="big blue" id="frSave"><span class="em">📤</span>Save it</button><button class="big ghost" data-close>Close</button>`);
+  $("#frSave").onclick=async e=>{ e.stopPropagation(); let ok=false;
+    try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:file.name}); ok=true; } }catch(err){ if(err&&err.name==="AbortError") return; }
+    if(!ok){ try{ const a=document.createElement("a"); a.href=URL.createObjectURL(file); a.download=file.name; document.body.appendChild(a); a.click(); a.remove(); ok=true; }catch(_){} }
+    if(ok){ if(after) after(); toast("💾 Saved"); } else toast("Couldn't save. Try again."); };
+}
+/* ---------- backup file: everything, with receipt photos ---------- */
+const blobToURL=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsDataURL(b); });
+const urlToBlob=u=>{ const i=u.indexOf(","), bin=atob(u.slice(i+1)), a=new Uint8Array(bin.length); for(let k=0;k<bin.length;k++) a[k]=bin.charCodeAt(k); return new Blob([a],{type:(u.slice(0,i).match(/data:([^;]+)/)||[])[1]||"image/jpeg"}); };
+async function makeBackupFile(){
+  openSheet(`<div class="ready"><span class="em">⏳</span>Making backup…</div>`);
+  try{ const photos={}, ids=new Set(data.appts.concat(data.trips).flatMap(r=>(r.photos||[]).map(p=>p.id)));
+    for(const id of ids){ const b=await pGet(id); if(b) photos[id]=await blobToURL(b); }
+    const n=Object.keys(photos).length;
+    const file=new File([JSON.stringify({app:"fscd-tracker",v:1,made:todayISO(),data,photos})],`FSCD backup ${todayISO()}.txt`,{type:"text/plain"});
+    fileReady(file,"💾 Backup",`Everything is inside${n?`, with ${n} receipt photo${n>1?"s":""}`:""}. On iPhone, pick “Save to Files”.`,()=>{ data.settings.lastBackup=todayISO(); save(); });
+  }catch(e){ openSheet(`<div class="warn">Couldn't make the backup. Try again.</div><button class="big ghost" data-close>Close</button>`); }
+}
+function pickRestoreFile(){
+  document.querySelectorAll("#restoreFile").forEach(x=>x.remove());
+  const inp=document.createElement("input"); inp.type="file"; inp.id="restoreFile"; inp.accept=".txt,.json,text/plain,application/json"; inp.style.display="none"; document.body.appendChild(inp);
+  inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; inp.remove(); if(!f) return;
+    try{ const txt=(await f.text()).trim(); let j; try{ j=JSON.parse(txt); }catch(_){ j={data:JSON.parse(decodeURIComponent(escape(atob(txt.replace(/\s+/g,"")))))}; }
+      const d=j&&j.data&&j.data.settings?j.data:j; if(!d||!d.settings) throw 0;
+      const doIt=async()=>{ for(const [id,u] of Object.entries(j.photos||{})){ try{ await pPut(id,urlToBlob(u)); }catch(_){} } data=normalize(d); save(); closeSheet(); render(); toast("♻️ Restored"); };
+      if(entryCount()){ openSheet(`<h2>♻️ Replace what's on this phone?</h2><div class="hint" style="font-size:17px;margin-bottom:6px">The ${entryCount()} entries here now will be swapped for the backup.</div><button class="big blue" id="yesRestore"><span class="em">♻️</span>Restore</button><button class="big ghost" data-close>Keep</button>`); $("#yesRestore").onclick=e=>{ e.stopPropagation(); doIt(); }; }
+      else doIt();
+    }catch(err){ toast("That file didn't work"); } };
+  inp.click();
+}
+/* ---------- a year's forms and receipt photos in one PDF ---------- */
+function pickYear(){
+  const ys=[...new Set(data.appts.concat(data.visits,data.trips).map(r=>r.date.slice(0,4)))].sort().reverse();
+  if(!ys.length) return toast("Nothing to save yet");
+  if(ys.length===1) return makeYearFile(ys[0]);
+  openSheet(`<h2>🗂️ Which year?</h2>${ys.map(y=>`<button class="big ghost" data-year="${y}">${y}</button>`).join("")}<button class="big ghost" data-close>Cancel</button>`);
+  $("#sheet").querySelectorAll("[data-year]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); makeYearFile(b.dataset.year); });
+}
+async function makeYearFile(y){
+  openSheet(`<div class="ready"><span class="em">⏳</span>Making ${y}…<div class="hint" style="font-size:17px;margin-top:6px">This can take a minute</div></div>`);
+  const keep=month; clearTimeout(thumbTimer);
+  try{ await pdfLibReady(); const {PDFDocument,StandardFonts}=PDFLib; const out=await PDFDocument.create(); let forms=0, np=0;
+    const add=async bytes=>{ const src=await PDFDocument.load(bytes); (await out.copyPages(src,src.getPageIndices())).forEach(pg=>out.addPage(pg)); forms++; };
+    for(let m=1;m<=12;m++){ month=`${y}-${String(m).padStart(2,"0")}`;
+      const ap=inMonth(data.appts);
+      if(ap.length){ const spec=[]; for(let i=0;i<ap.length;i+=LIMIT.doc) spec.push({n:spec.length+1,lines:ap.slice(i,i+LIMIT.doc).map(a=>({id:a.id,typed:true}))}); await add(await buildPDF("doc",spec)); }
+      if(inMonth(data.visits).length) await add(await buildPDF("resp"));
+      if(tripsInMonth().length) await add(await buildPDF("trip"));
+    }
+    month=keep;
+    if(!forms){ closeSheet(); return toast(`Nothing in ${y} yet`); }
+    const F=await out.embedFont(StandardFonts.Helvetica);
+    for(const r of data.appts.concat(data.trips).filter(r=>r.date.slice(0,4)===String(y)).sort((a,b)=>a.date.localeCompare(b.date))) for(const ph of (r.photos||[])){
+      const b=await pGet(ph.id); if(!b) continue;
+      try{ const img=await out.embedJpg(await b.arrayBuffer()); const pg=out.addPage([612,792]); const k=Math.min(540/img.width,690/img.height,1), w=img.width*k, h=img.height*k;
+        pg.drawText(`${r.date}  ${PKIND[ph.kind][1]} receipt  ${r.name||r.to||""}`.replace(/[^\x20-\x7E]/g,"").slice(0,90),{x:36,y:762,size:12,font:F});
+        pg.drawImage(img,{x:(612-w)/2,y:748-h,width:w,height:h}); np++; }catch(_){}
+    }
+    const file=new File([await out.save()],`FSCD records ${y}.pdf`,{type:"application/pdf"});
+    fileReady(file,`🗂️ ${y} records`,`${forms} form${forms>1?"s":""}${np?` and ${np} receipt photo${np>1?"s":""}`:""} in one PDF. Keep it 7 years. Signed forms: keep the paper or a photo too.`);
+  }catch(e){ openSheet(`<div class="warn">${e.message==="nolib"?"📶 Couldn't load. Check the internet connection and try again.":"Something went wrong making the file."}</div><button class="big ghost" data-close>Close</button>`); }
+  finally{ month=keep; }
+}
+/* ---------- Add to Home Screen: a browser tab can lose its saved data; the Home Screen app keeps it ---------- */
+const STANDALONE=(()=>{ try{ return navigator.standalone===true||matchMedia("(display-mode: standalone)").matches; }catch(e){ return false; } })();
+const IN_FRAME=(()=>{ try{ return window.top!==window; }catch(e){ return true; } })();
+const IS_IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent), IS_PHONE=IS_IOS||/Android/i.test(navigator.userAgent);
+function a2hsCard(){ if(STANDALONE||IN_FRAME||!IS_PHONE) return ""; const l=data.settings.a2hsLater; if(l&&(parseISO(todayISO())-parseISO(l))/864e5<7) return "";
+  return `<button class="start" data-act="a2hs" style="background:var(--resp);margin:12px 0 0"><span class="em">📲</span><span><b>Add to Home Screen</b><span>Keeps your records safe</span></span><span class="chev">›</span></button>`; }
+function a2hsSheet(){ const n=entryCount();
+  const steps=IS_IOS?["Tap Share 📤 in the browser","Tap “Add to Home Screen”","Open the app from the new icon"]:["Tap the ⋮ menu in the browser","Tap “Add to Home screen”","Open the app from the new icon"];
+  openSheet(`<h2>📲 Add to Home Screen</h2>
+    <div class="hint" style="font-size:18px;margin-bottom:10px">In a browser tab, the phone can erase your records after a week. From the Home Screen, they stay.</div>
+    ${n?`<div class="warn" style="font-size:17px">⚠️ The new app starts empty. Save a backup file first, then restore it in the new app (Setup).</div><button class="big ghost" id="a2Backup"><span class="em">💾</span>Save backup file</button>`:""}
+    ${steps.map((t,i)=>`<div class="hstep"><span>${i+1}️⃣</span><span>${t}</span></div>`).join("")}
+    ${IS_IOS?`<div class="hint" style="font-size:16px;text-align:center">Works best in Safari</div>`:""}
+    <button class="big blue" data-close><span class="em">👍</span>OK</button><button class="big ghost" id="a2Later">Remind me next week</button>`);
+  if($("#a2Backup")) $("#a2Backup").onclick=e=>{ e.stopPropagation(); makeBackupFile(); };
+  $("#a2Later").onclick=e=>{ e.stopPropagation(); data.settings.a2hsLater=todayISO(); save(); closeSheet(); render(); };
+}
+/* ---------- "New version" bar: checks GitHub for a newer app and updates with one tap ---------- */
+let updHTML=null, updAt=0;
+async function checkUpdate(force){ if(IN_FRAME||!/^https?:$/.test(location.protocol)||updHTML||(!force&&Date.now()-updAt<10*60e3)) return; updAt=Date.now();
+  try{ const r=await fetch("index.html",{cache:"no-store"}); if(!r.ok) return; const h=await r.text(), m=h.match(/const APP_VERSION\s*=\s*"([^"]*)";/);
+    if(m&&m[1]!==APP_VERSION){ updHTML=h; $("#updBar").style.display="flex"; } }catch(e){} }
+async function applyUpdate(){ $("#updBar").textContent="Updating…";
+  try{ if(window.caches&&updHTML){ for(const k of await caches.keys()){ if(!k.startsWith("fscd-tracker")) continue; const c=await caches.open(k), mk=()=>new Response(updHTML,{headers:{"Content-Type":"text/html; charset=utf-8"}}); await c.put("index.html",mk()); await c.put("./",mk()); } }
+    const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(reg) await reg.update().catch(()=>{}); }catch(e){}
+  location.reload(); }
+setTimeout(checkUpdate,5000);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") checkUpdate(); });
 
 /* ---------- trips ---------- */
 const PARK_CAP=10;
@@ -2073,7 +2184,12 @@ document.addEventListener("click", e=>{
     case "stop": { const r=data.running; if(r){ data.visits.push({id:uid(),date:r.date,start:r.start,end:nowHM()}); data.running=null; save(); month=r.date.slice(0,7); render(); toast("✅ Saved"); } break; }
     case "cancel-run": data.running=null; save(); render(); break;
     case "add-clinic": { const n=$("#cName").value.trim(), a=$("#cAddr").value.trim(); if(!n){ toast("Type the doctor or hospital"); return; } data.settings.clinics.push({id:uid(),name:n,address:a,km:($("#cKm").value||"").trim()}); save(); render(); toast("✅ Added"); break; }
-    case "go-backup": go("setup"); setTimeout(()=>{ const el=document.querySelector('[data-act="backup"]'); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); },120); break;
+    case "go-backup": go("setup"); setTimeout(()=>{ const el=document.querySelector('[data-act="backup-file"]'); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); },120); break;
+    case "backup-file": makeBackupFile(); break;
+    case "restore-file": pickRestoreFile(); break;
+    case "year-file": pickYear(); break;
+    case "a2hs": a2hsSheet(); break;
+    case "update-now": applyUpdate(); break;
     case "backup": { data.settings.lastBackup=todayISO(); const code=btoa(unescape(encodeURIComponent(JSON.stringify(data)))); navigator.clipboard.writeText(code).then(()=>{ save(); toast("📋 Copied. Paste into Notes."); },()=>{ $("#restoreBox").value=code; toast("Copy the code in the box"); }); break; }
     case "restore": { try{ const d=JSON.parse(decodeURIComponent(escape(atob($("#restoreBox").value.replace(/\s+/g,""))))); if(!d.settings) throw 0;
         const doIt=()=>{ data=normalize(d); save(); closeSheet(); render(); toast("♻️ Restored"); };
@@ -2095,7 +2211,9 @@ render(); iconize(document.body);
 // ask the phone not to clear this app's data, and keep a copy of the app for when there's no signal
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
 try{ if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost") && window.top===window) navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
-window.__test = { go, data:()=>data, setData:d=>{data=normalize(d);save();render();}, setMonth:m=>{month=m;render();}, buildPDF, faq:FAQ, loadPdfJs };
+// load the doctor list quietly, so the first search is instant
+setTimeout(()=>{ try{ if(!(navigator.connection&&navigator.connection.saveData)) loadABD(); }catch(e){} },3500);
+window.__test = { checkUpdate, makeYearFile, go, data:()=>data, setData:d=>{data=normalize(d);save();render();}, setMonth:m=>{month=m;render();}, buildPDF, faq:FAQ, loadPdfJs };
 })();
 </script>
 </body>
