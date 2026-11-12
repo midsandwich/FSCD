@@ -326,6 +326,26 @@ html.xl .minis{grid-template-columns:1fr 1fr 1fr}
 .ta button small{display:block;font-size:15px;font-weight:500;color:var(--muted);margin-top:2px}
 .ta .tsp{display:block;margin-top:4px;font-size:16px;font-weight:600;color:var(--ink)}
 .ta .tsp b{display:inline-block;background:var(--blue-soft);color:var(--blue);border-radius:9px;padding:2px 9px;margin-right:4px;font-weight:750}
+.msheets{margin:10px 0 6px}
+.msheet{background:var(--card);border-radius:18px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:18px}
+.mhead span{color:var(--muted);font-size:16px}
+.mlines{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+.ml{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:60px;border-radius:12px;border:2px solid var(--line);font-size:19px}
+.ml i{font-style:normal;font-weight:800;font-size:16px;color:var(--muted)}
+.ml.p{background:var(--blue-soft);border-color:var(--blue)}
+.ml.h{background:var(--resp-soft);border-color:var(--resp)}
+.ml.g{opacity:.4}
+.mleg{display:flex;gap:14px;justify-content:center;font-size:15px;color:var(--muted);flex-wrap:wrap}
+.mini2{display:block;width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--line);font-size:16px;font-weight:650;color:var(--ink)}
+.mbadge{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:9px;font-size:14px;font-weight:750;vertical-align:1px}
+.mbadge.p{background:var(--blue-soft);color:var(--blue)}
+.mbadge.h{background:var(--resp-soft);color:var(--resp)}
+.mbadge.w{background:var(--soft);color:var(--muted)}
+.desk{background:var(--card);border:3px solid var(--resp);border-radius:22px;padding:20px 16px;text-align:center}
+.desk .dl{font-size:20px;font-weight:800;color:var(--resp)}
+.desk .dn{font-size:28px;font-weight:800;margin:10px 0;line-height:1.2}
+.desk .dd{font-size:22px;font-weight:600}
 .ta .tah{padding:8px 14px;font-size:15px;color:var(--muted);background:var(--soft)}
 </style>
 </head>
@@ -358,7 +378,7 @@ function load(){
 function normalize(d){ const b=blank(); const out=Object.assign(b,d||{}); out.settings=Object.assign(blank().settings,(d&&d.settings)||{}); out.settings.worker=Object.assign(blank().settings.worker,out.settings.worker||{}); ["appts","visits","trips"].forEach(k=>{ if(!Array.isArray(out[k])) out[k]=[]; }); { const MAP={"Medical appointment (return trip)":"Medical appt (round trip)","Hospital stay (return trip)":"Hospital stay (round trip)","Medical appt":"Medical appt (round trip)","Hospital stay":"Hospital stay (round trip)"}; out.trips.forEach(t=>{ if(MAP[t.purpose]) t.purpose=MAP[t.purpose]; }); }
   if(!Array.isArray(out.settings.services)||!out.settings.services.length) out.settings.services=[out.settings.service||"Hourly Respite"];
   if(!out.settings.wages){ out.settings.wages={}; out.settings.wages[out.settings.services[0]]=out.settings.wage||""; }
-  if(!out.checks) out.checks={}; if(!out.triple) out.triple={}; return out; }
+  if(!out.checks) out.checks={}; if(!out.triple) out.triple={}; if(!out.medSheets||typeof out.medSheets!=="object"||Array.isArray(out.medSheets)) out.medSheets={}; return out; }
 function save(){
   try { localStorage.setItem(KEY, JSON.stringify(data)); storageOK = true; }
   catch(e){ storageOK = false; try{ toast("⚠️ Couldn't save. Phone storage may be full."); }catch(_){} }
@@ -413,7 +433,7 @@ function iconize(root){
 new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(x=>iconize(x)); if(m.type==="characterData") iconize(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
 
 /* ---------- helpers ---------- */
-const APP_VERSION="Nov 10, 2026 · 9:50 PM"; // change this on every update, so the phone shows which version it has
+const APP_VERSION="Nov 11, 2026 · 7:15 PM"; // change this on every update, so the phone shows which version it has
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
@@ -505,19 +525,20 @@ function renderInner(){
     app.innerHTML = `
       <div class="top"><button class="iconbtn" data-go="home" aria-label="Back">⬅️</button><h1>🏥 Doctor</h1></div>
       ${monthBar()}
-      ${formCard("doc",list.length)}
+      ${formCard("doc",docUsed())}
+      ${medStrip()}
       ${limitCard("doc")}
       ${(()=>{ const X=apptExtras(list); if(!X.meals&&!X.hotel&&!X.missing) return "";
         return `<div class="total"><div><b>${money(X.meals)}</b><span>🍽️ meals</span></div><div><b>${money(X.hotel)}</b><span>🛏️ hotel</span></div></div>`
           +(X.missing?`<div class="warn">🧾 ${X.missing} hotel receipt${X.missing>1?"s":""} missing</div>`:""); })()}
       <div class="list">${list.length? list.map(a=>`
-        <button class="item${rcptMissing(a)?" need":""}" data-edit-appt="${a.id}" style="text-align:left"><span class="em">🏥</span><div class="main"><div class="a">${esc(shortDate(a.date))} · ${esc(time12(a.time))}</div><div class="b">${esc(a.name)}${a.long?` · ⏱️ 8 h+${+a.meals?` · 🍽️ ${money(+a.meals)}`:""}${+a.hotel?` · 🛏️ ${money(+a.hotel)}`:""}`:""}</div></div>${rcptMissing(a)?`<span class="rbadge">🧾 Receipt</span>`:""}<span class="go">›</span></button>`).join("")
+        <button class="item${rcptMissing(a)?" need":""}" data-edit-appt="${a.id}" style="text-align:left"><span class="em">🏥</span><div class="main"><div class="a">${esc(shortDate(a.date))} · ${esc(time12(a.time))}${medBadge(a)}</div><div class="b">${esc(a.name)}${a.long?` · ⏱️ 8 h+${+a.meals?` · 🍽️ ${money(+a.meals)}`:""}${+a.hotel?` · 🛏️ ${money(+a.hotel)}`:""}`:""}</div></div>${rcptMissing(a)?`<span class="rbadge">🧾 Receipt</span>`:""}<span class="go">›</span></button>`).join("")
         : `<div class="empty"><span class="em">📅</span>No appointments yet<br><span class="hint">Tap “Add appointment” below</span></div>`}</div>
       ${list.length?`<div class="hint" style="text-align:center;margin:-4px 0 4px">Tap one to change it</div>`:""}
       <button class="big doc" data-act="add-appt"><span class="em">➕</span>Add appointment</button>
-      <button class="big ghost" data-act="print-doc"><span class="em">🖨️</span>Print form</button>
+      ${docPrintBtn()}
       ${photoCount(list)?`<button class="big ghost" data-act="save-photos-doc"><span class="em">🖼️</span>Save ${photoCount(list)} receipt photo${photoCount(list)>1?"s":""}</button>`:""}
-      <div class="hint" style="text-align:center;margin-top:8px">Print it before the visit. The doctor or hospital signs it.</div>`;
+      <div class="hint" style="text-align:center;margin-top:8px">Print once. Take the same sheet to every visit.</div>`;
   }
   else if (screen==="resp"){
     const list=inMonth(data.visits);
@@ -861,6 +882,7 @@ function addApptSheet(editId){
     </div>
     <div class="pbox" style="display:none"></div>
     <div class="hint" style="margin-top:8px">📷 Tap the camera to add a receipt photo</div>
+    ${ex&&(()=>{ const p=medPlace(ex.id,ex.date.slice(0,7)); return p&&!p.typed; })()?`<button class="big ghost" id="deskAppt"><span class="em">✍️</span>Show at the desk</button>`:""}
     <button class="big doc" id="saveAppt"><span class="em">✅</span>${ex?"Save changes":"Save"}</button>
     ${ex?`<button class="big ghost" id="delAppt" style="color:var(--red)"><span class="em">🗑️</span>Delete appointment</button>`:""}
     <button class="big ghost" data-close>Cancel</button>`);
@@ -879,6 +901,7 @@ function addApptSheet(editId){
   $("#aRcpt").onclick=e=>{ e.stopPropagation(); tog($("#aRcpt"),!$("#aRcpt").classList.contains("on")); };
   $("#aHotel").addEventListener("input",()=>{ $("#aRcpt").style.display=(+$("#aHotel").value>0)?"flex":"none"; });
   const photos=photoCtl([...((ex&&ex.photos)||[])],k=>{ if(k==="hotel") tog($("#aRcpt"),true); });
+  if($("#deskAppt")) $("#deskAppt").onclick=e=>{ e.stopPropagation(); deskCard(ex.id); };
   if(ex) $("#delAppt").onclick=e=>{ e.stopPropagation(); confirmSheet("🗑️ Delete this appointment?",()=>{ data.appts=data.appts.filter(a=>a.id!==ex.id); save(); }); };
   $("#saveAppt").onclick=e=>{
     e.stopPropagation();
@@ -891,8 +914,10 @@ function addApptSheet(editId){
     const rec={id:ex?ex.id:uid(),date,time,name:n,address:a||c.address||"",km:k||c.km||"",parking:($("#aPark").value||"").trim()};
     if($("#aLong").classList.contains("on")){ rec.long=true; rec.meals=($("#aMeals").value||"").trim(); rec.hotel=($("#aHotel").value||"").trim(); rec.hotelReceipt=+rec.hotel>0&&($("#aRcpt").classList.contains("on")||photos.some(p=>p.kind==="hotel")); }
     if(photos.length) rec.photos=photos.slice();
+    const before=ex?medPlace(ex.id,ex.date.slice(0,7)):null;
     if(ex) data.appts=data.appts.map(a=>a.id===ex.id?rec:a); else data.appts.push(rec);
     save(); month=date.slice(0,7); closeSheet(); render(); toast(rcptMissing(rec)?"🧾 Saved · keep the hotel receipt":(ex?"✅ Changed":"✅ Saved"));
+    const pl=medPlace(rec.id); if(pl&&!pl.typed&&(!before||before.sheet!==pl.sheet||before.line!==pl.line)) setTimeout(()=>deskCard(rec.id),350);
   };
 }
 function addVisitSheet(editId){
@@ -959,6 +984,47 @@ function confirmSheet(msg, onYes){
 
 /* ---------- form limits (rows on the official forms) ---------- */
 const LIMIT={doc:6,resp:30,trip:19};
+/* ---------- medical sheets ----------
+   The clinic signs each line, so a printed sheet is never printed over.
+   A visit added after a sheet was printed goes on that sheet's next empty line;
+   the clinic staff write it by hand ("✍️"). Print makes a new sheet only for visits not on paper yet. */
+const inMonthOf=(arr,m)=>arr.filter(x=>x.date.slice(0,7)===m).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+function medSheets(m=month){ if(!data.medSheets) data.medSheets={}; return data.medSheets[m]||(data.medSheets[m]=[]); }
+function syncMed(m=month){
+  const sh=(data.medSheets||{})[m]; if(!sh||!sh.length) return;
+  const list=inMonthOf(data.appts,m), here=new Set(list.map(a=>a.id)), placed=new Set(); let changed=false;
+  sh.forEach(x=>x.lines.forEach(l=>{ if(l.id&&(!here.has(l.id)||placed.has(l.id))){ l.id=null; l.gone=true; changed=true; } if(l.id) placed.add(l.id); }));
+  const last=sh[sh.length-1];
+  list.forEach(a=>{ if(!placed.has(a.id)&&last.lines.length<LIMIT.doc){ last.lines.push({id:a.id,typed:false}); placed.add(a.id); changed=true; } });
+  if(changed) save();
+}
+function medPlace(id,m=month){ const sh=(data.medSheets||{})[m]||[]; for(let i=0;i<sh.length;i++){ const k=sh[i].lines.findIndex(l=>l.id===id); if(k>=0) return {sheet:i+1,line:k+1,typed:sh[i].lines[k].typed,sheets:sh.length}; } return null; }
+function medWaiting(m=month){ syncMed(m); return inMonthOf(data.appts,m).filter(a=>!medPlace(a.id,m)); }
+function medOpen(m=month){ const sh=(data.medSheets||{})[m]||[]; const last=sh[sh.length-1]; return last&&last.lines.length<LIMIT.doc?last:null; }
+// what "Print" makes now: new sheets for the visits not on paper yet, or one blank sheet
+function medPlan(m=month){ const w=medWaiting(m), n0=((data.medSheets||{})[m]||[]).length, out=[];
+  for(let i=0;i<w.length;i+=LIMIT.doc) out.push({n:n0+out.length+1,lines:w.slice(i,i+LIMIT.doc).map(a=>({id:a.id,typed:true}))});
+  if(!out.length && !medOpen(m)) out.push({n:n0+1,lines:[]});
+  return out; }
+function docUsed(){ const w=medWaiting().length, o=medOpen(), sh=(data.medSheets||{})[month]||[]; if(w) return ((w-1)%LIMIT.doc)+1; if(o) return o.lines.length; return sh.length?LIMIT.doc:0; }
+function medBadge(a){ const p=medPlace(a.id); if(!p) return `<span class="mbadge w">⏳ Not printed</span>`;
+  const where=`Line ${p.line}${p.sheets>1?` · sheet ${p.sheet}`:""}`;
+  return p.typed?`<span class="mbadge p">🖨️ ${where}</span>`:`<span class="mbadge h">✍️ ${where}</span>`; }
+function medStrip(){ const sh=(data.medSheets||{})[month]||[]; if(!sh.length) return "";
+  return `<div class="msheets">${sh.map((x,i)=>`<div class="msheet"><div class="mhead"><b>📄 Sheet ${i+1}</b><span>${x.lines.length<LIMIT.doc?"Take it to every visit":"Full"}</span></div>
+    <div class="mlines">${Array.from({length:LIMIT.doc},(_,k)=>{ const l=x.lines[k]; const c=!l?"e":l.gone?"g":l.typed?"p":"h"; return `<span class="ml ${c}"><i>${k+1}</i>${!l?"":l.gone?"✕":l.typed?"🖨️":"✍️"}</span>`; }).join("")}</div>
+    <button class="mini2" data-act="print-doc-again" data-n="${i+1}">🔁 Lost it? Print sheet ${i+1} again</button></div>`).join("")}
+    <div class="mleg"><span>🖨️ printed</span><span>✍️ staff write it</span><span>⬜ empty</span></div></div>`; }
+function docPrintBtn(){ const w=medWaiting().length;
+  if(w) return `<button class="big ghost" data-act="print-doc"><span class="em">🖨️</span>Print new sheet${w>1?` · ${w} visits`:""}</button>`;
+  if(!medOpen()) return `<button class="big ghost" data-act="print-doc"><span class="em">🖨️</span>Print a blank sheet</button>`;
+  return ""; }
+// big card for a visit the staff write by hand
+function deskCard(id){ const a=data.appts.find(x=>x.id===id), p=a&&medPlace(a.id,a.date.slice(0,7)); if(!a||!p) return; const d=parseISO(a.date);
+  openSheet(`<h2>✍️ Show this at the desk</h2>
+    <div class="desk"><div class="dl">Sheet ${p.sheet} · Line ${p.line}</div><div class="dn">${esc(a.name)}</div><div class="dd">${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}<br>${esc(time12(a.time))}</div></div>
+    <div class="hint" style="font-size:18px;margin:12px 4px;text-align:center">The staff write this on line ${p.line} of your sheet, and sign it.</div>
+    <button class="big blue" data-close><span class="em">👍</span>OK</button>`); }
 
 /* ---------- yearly limits ---------- */
 // the agreement year runs 12 months from the start date (or Jan 1 if no date is set)
@@ -1015,7 +1081,7 @@ function formCard(kind,count){
 }
 let thumbTimer=null; const thumbCache={};
 function thumbPage(kind){ if(kind!=="triple") return 0; const P2=["second","secondRel","secondPhone","secondEmail","language","langHelp","reason","how","more","address"]; const st2=wizSteps(); const cur=st2[Math.min(wiz,st2.length-1)]; return (wiz<st2.length && cur && P2.includes(cur.k))?2:1; }
-const thumbKeyOf=kind=>kind+"|"+month+"|"+thumbPage(kind)+"|"+JSON.stringify(kind==="triple"?data.triple:[data.settings,data.appts,data.visits,data.trips]);
+const thumbKeyOf=kind=>kind+"|"+month+"|"+thumbPage(kind)+"|"+JSON.stringify(kind==="triple"?data.triple:[data.settings,data.appts,data.visits,data.trips,data.medSheets]);
 function putThumb(box,c){ box.innerHTML=""; box.appendChild(c); const z=document.createElement("span"); z.className="zoom"; z.textContent="🔍"; box.appendChild(z); }
 function scheduleThumb(kind){
   clearTimeout(thumbTimer);
@@ -1437,7 +1503,7 @@ async function loadTemplate(kind){
 function pdfLibReady(){ if(window.PDFLib) return Promise.resolve();
   return new Promise((res,rej)=>{ const chk=()=>window.PDFLib?res():rej(new Error("nolib"));
     if(document.readyState==="complete") chk(); else window.addEventListener("load",chk,{once:true}); }); }
-async function buildPDF(kind){
+async function buildPDF(kind,docSpec){
   await pdfLibReady();
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
   const doc = await PDFDocument.create();
@@ -1473,14 +1539,16 @@ async function buildPDF(kind){
     const addTpl=async(idx=0)=>{ const [pg]=await doc.copyPages(src,[idx]); doc.addPage(pg); return pg; };
     const cell2=(c,txt,x,yt,w,h,size,font)=>{ const R=c.fitLines(txt,w,2,size,font,4.5); const off=R.lines.length===1?(h-R.size)/2:(h-2*R.size*1.15)/2; R.lines.forEach((l,k)=>c.T(l,x,yt+off+k*R.size*1.15,R.size,font,blue)); };
     if(kind==="doc"){
-      const list=inMonth(data.appts); const pages=Math.max(1,Math.ceil(list.length/LIMIT.doc));
+      const plan=docSpec||medPlan(), shs=medSheets();
+      const spec=plan.length?plan:shs.slice(-1).map(x=>({n:shs.length,lines:x.lines.map(l=>({id:l.id,typed:!!l.id}))}));
+      const byId=Object.fromEntries(data.appts.map(a=>[a.id,a])), pages=spec.length;
       for(let p=0;p<pages;p++){
         const page=await addTpl(0); const c=ctx(page);
         c.T(st.childName,174,252,c.fit(st.childName,270,12,F),F,blue);
         c.T(st.childId,174,281,c.fit(st.childId,270,12,F),F,blue);
         c.T(monthLabel(month),318,309,c.fit(monthLabel(month),150,12,F),F,blue);
         const rows=[341,369,424,479,532,587,641,690];
-        list.slice(p*LIMIT.doc,(p+1)*LIMIT.doc).forEach((a,i)=>{
+        spec[p].lines.forEach((ln,i)=>{ const a=ln.id&&ln.typed?byId[ln.id]:null; if(!a) return;
           const top=rows[i+1]+5, boxH=rows[i+2]-rows[i+1]-9, bw=150;
           // form asks for the NAME only (no address)
           let ns=11, N;
@@ -1491,7 +1559,7 @@ async function buildPDF(kind){
           c.T(`${DAY3[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,232,top+6,10,F,blue);
           c.T(time12(a.time),232,top+20,10,F,blue);
         });
-        if(pages>1) c.T(`Form ${p+1} of ${pages}`,470,705,8,F,gray);
+        if(spec[p].n>1||pages>1||shs.length>0) c.T(`Sheet ${spec[p].n}`,470,705,8,F,gray);
       }
     }
     if(kind==="resp"){
@@ -1831,16 +1899,26 @@ async function buildPDF(kind){
 
 /* ---------- print / share ---------- */
 let ready=null;
-async function makeForm(kind){
+async function makeForm(kind,opts){
   const st=data.settings;
   if(kind!=="triple" && (!st.childName||!st.childId)){ toast("⚙️ Fill in the child's name and ID first"); go("setup"); return; }
   if(kind==="resp" && !inMonth(data.visits).length){ toast("➕ Add a visit first"); return; }
   if(kind==="trip" && !tripsInMonth().length){ toast("➕ Add a trip first"); return; }
+  let docSpec=null, commit=null, tag="";
+  if(kind==="doc"){
+    if(opts&&opts.again){ const sh=medSheets()[opts.again-1]; if(!sh) return;
+      docSpec=[{n:opts.again,lines:sh.lines.map(l=>({id:l.id,typed:!!l.id}))}]; tag=` sheet ${opts.again}`;
+      commit=()=>sh.lines.forEach(l=>{ if(l.id) l.typed=true; }); }
+    else { const plan=medPlan(); if(!plan.length){ toast("📄 Your sheet has room · take it to the visit"); return; }
+      docSpec=plan; tag=plan.length>1?` sheets ${plan[0].n}-${plan[plan.length-1].n}`:` sheet ${plan[0].n}`;
+      commit=()=>plan.forEach(x=>medSheets().push({lines:x.lines.map(l=>({id:l.id,typed:true})),at:todayISO()})); }
+  }
   openSheet(`<div class="ready"><span class="em">⏳</span>Making form…</div>`);
   try{
-    const bytes=await buildPDF(kind);
+    const bytes=await buildPDF(kind,docSpec);
+    if(commit){ commit(); save(); renderInner(); iconize(document.body); scheduleThumb("doc"); }
     const [y,m]=month.split("-");
-    const name = kind==="triple" ? "Triple P Referral.pdf" : ({doc:"Medical Appointments",resp:"Respite Record",trip:"Mileage Log"}[kind])+` ${MONTHS[+m-1]} ${y}.pdf`;
+    const name = kind==="triple" ? "Triple P Referral.pdf" : ({doc:"Medical Appointments",resp:"Respite Record",trip:"Mileage Log"}[kind])+` ${MONTHS[+m-1]} ${y}${tag}.pdf`;
     ready={bytes,name,kind,summary:summaryText(kind),steps:FORM_STEPS[kind],hint:FORM_HINT[kind]};
     openReady();
 
@@ -1977,6 +2055,9 @@ document.addEventListener("click", e=>{
     case "add-appt": addApptSheet(); break;
     case "add-visit": addVisitSheet(); break;
     case "print-doc": makeForm("doc"); break;
+    case "print-doc-again": { const n=+t.dataset.n;
+      openSheet(`<h2>🔁 Print sheet ${n} again?</h2><div class="hint" style="font-size:18px;margin-bottom:10px">Only if you lost it, or nothing on it is signed yet. The clinic signs every line again.</div><button class="big blue" id="yesAgain"><span class="em">🖨️</span>Print again</button><button class="big ghost" data-close>Cancel</button>`);
+      $("#yesAgain").onclick=e2=>{ e2.stopPropagation(); makeForm("doc",{again:n}); }; break; }
     case "save-photos-doc": savePhotos(inMonth(data.appts)); break;
     case "save-photos-trip": savePhotos(tripsInMonth()); break;
     case "print-resp": makeForm("resp"); break;
